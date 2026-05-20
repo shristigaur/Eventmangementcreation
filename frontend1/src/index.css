@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+:root {
+	--bg-green: #f3fbf6;
+	--accent: #047857;
+	--accent-600: #059669;
+	--card: #ffffff;
+	--muted: #6b7280;
+}
+
+.bg-modern { background-color: var(--bg-green); }
+
+/* decorative blobs used in the modern hero */
+.blob {
+	position: absolute;
+	width: 220px;
+	height: 220px;
+	border-radius: 48% 52% 58% 42% / 42% 58% 48% 52%;
+	filter: blur(28px);
+	pointer-events: none;
+	opacity: 0.9;
+}
+.blob.one { left: -60px; top: -40px; background: linear-gradient(135deg, rgba(4,120,87,0.12), rgba(4,120,87,0.06)); }
+.blob.two { right: -80px; bottom: -30px; width: 320px; height: 320px; background: linear-gradient(135deg, rgba(5,150,105,0.12), rgba(5,150,105,0.06)); }
+
+@keyframes floaty { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
+.floaty { animation: floaty 6s ease-in-out infinite; }
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px) scale(0.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.reveal-item,
+[data-reveal] {
+	opacity: 1;
+	transform: translateY(0) scale(1);
+	filter: blur(0);
+	transition: opacity 720ms ease, transform 720ms cubic-bezier(.2,.9,.2,1), filter 720ms ease;
+	transition-delay: var(--reveal-delay, 0ms);
+	will-change: opacity, transform;
+}
+
+@media (min-width: 768px) {
+	.reveal-item.will-reveal,
+	[data-reveal].will-reveal {
+		opacity: 0;
+		transform: translateY(18px) scale(0.985);
+		filter: blur(6px);
+	}
+}
+
+.reveal-item.is-visible,
+[data-reveal].is-visible {
+	opacity: 1;
+	transform: translateY(0) scale(1);
+	filter: blur(0);
+}
+
+.reveal-item:hover,
+[data-reveal]:hover {
+	transform: translateY(-4px) scale(1.01);
+}
+
+[data-reveal].text-motion {
+	text-shadow: 0 10px 30px rgba(4, 120, 87, 0.08);
+}
+
+@keyframes softPulseText {
+	0%, 100% { opacity: 0.95; }
+	50% { opacity: 1; }
+}
+
+.text-pulse {
+	animation: softPulseText 3.5s ease-in-out infinite;
+}
+
+@keyframes drift {
+	0% { transform: translate3d(0, 0, 0); }
+	50% { transform: translate3d(0, -10px, 0); }
+	100% { transform: translate3d(0, 0, 0); }
+}
+.drift-slow { animation: drift 7s ease-in-out infinite; }
+.drift-fast { animation: drift 4.5s ease-in-out infinite; }
+
+@keyframes glowPulse {
+	0%, 100% { box-shadow: 0 0 0 0 rgba(5, 150, 105, 0.14); }
+	50% { box-shadow: 0 0 0 18px rgba(5, 150, 105, 0); }
+}
+.glow-pulse { animation: glowPulse 2.6s ease-in-out infinite; }
+
+.media-card {
+	backdrop-filter: blur(10px);
+}
+
+.media-card img {
+	display: block;
+	opacity: 1;
+	visibility: visible;
+}
+
+.modern-hero-wrap { position: relative; overflow: hidden; }
+
