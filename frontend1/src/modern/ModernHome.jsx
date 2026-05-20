@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import ModernNavbar from "./ModernNavbar";
 import ModernEventCard from "./ModernEventCard";
+import ModernFooter from "./ModernFooter";
 
 function createArt(title, colors) {
   const [start, end, accent] = colors;
@@ -350,32 +351,7 @@ export default function ModernHome() {
           </div>
         </section>
 
-        <footer className="mt-2 border-t border-emerald-100 bg-[#eef9f1]">
-          <div className="max-w-7xl mx-auto px-6 py-10">
-            <div className="grid gap-6 md:grid-cols-3">
-              <div>
-                <h3 className="text-lg font-bold text-black">Eventify</h3>
-                <p className="mt-2 text-sm text-black/80">
-                  Plan, discover, and enjoy events with a cleaner and more creative experience.
-                </p>
-              </div>
-              <div>
-                <h4 className="text-sm font-semibold uppercase tracking-[0.18em] text-black">Explore</h4>
-                <p className="mt-2 text-sm text-black/80">Business</p>
-                <p className="text-sm text-black/80">Festival</p>
-                <p className="text-sm text-black/80">Art</p>
-              </div>
-              <div>
-                <h4 className="text-sm font-semibold uppercase tracking-[0.18em] text-black">Contact</h4>
-                <p className="mt-2 text-sm text-black/80">support@eventify.com</p>
-                <p className="text-sm text-black/80">+91 98765 43210</p>
-              </div>
-            </div>
-            <div className="mt-8 border-t border-emerald-100 pt-4 text-sm text-black/70">
-              © 2026 Eventify. All rights reserved.
-            </div>
-          </div>
-        </footer>
+        <ModernFooter />
       </main>
     </div>
   );
