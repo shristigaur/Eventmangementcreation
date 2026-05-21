@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { rsvpAPI } from "../api/index.js";
 import { useAuth } from "../context/AuthContext.jsx";
+import { isValidObjectId } from "../utils/idUtils.js";
 
 const rsvpLabels = {
 	going: "Going",
@@ -21,14 +22,14 @@ export default function ModernEventCard({ event }) {
     let isMounted = true;
 
     const loadStatus = async () => {
-      if (!user || !eventId) {
+      if (!user || !eventId || !isValidObjectId(String(eventId))) {
         return;
       }
 
       try {
         const response = await rsvpAPI.getMyRsvp(eventId);
         if (isMounted) {
-          setRsvpStatus(response.data?.status || null);
+          setRsvpStatus(response.data?.data?.status || null);
         }
       } catch {
         if (isMounted) {
@@ -47,6 +48,11 @@ export default function ModernEventCard({ event }) {
   const handleAttendance = async (status) => {
     if (!user) {
       navigate("/login");
+      return;
+    }
+
+    if (!eventId || !isValidObjectId(String(eventId))) {
+      setRsvpError("This event is demo/demo-data and cannot be saved yet.");
       return;
     }
 

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { rsvpAPI } from "../api/index.js";
 import { useAuth } from "../context/AuthContext.jsx";
+import { isValidObjectId } from "../utils/idUtils.js";
 
 function EventCard({ event, type, rsvpStatus, onRsvp, showAttendance = true }) {
   const eventId = event._id || event.id;
@@ -15,14 +16,14 @@ function EventCard({ event, type, rsvpStatus, onRsvp, showAttendance = true }) {
     let isMounted = true;
 
     const loadStatus = async () => {
-      if (!user || !eventId || String(eventId).length !== 24) {
+      if (!user || !eventId || !isValidObjectId(String(eventId))) {
         return;
       }
 
       try {
         const response = await rsvpAPI.getMyRsvp(eventId);
         if (isMounted) {
-          setCurrentRsvpStatus(response.data?.status || null);
+          setCurrentRsvpStatus(response.data?.data?.status || null);
         }
       } catch {
         if (isMounted) {
@@ -44,8 +45,8 @@ function EventCard({ event, type, rsvpStatus, onRsvp, showAttendance = true }) {
       return;
     }
 
-    if (!eventId || String(eventId).length !== 24) {
-      setRsvpError("This event is still demo data and cannot be saved yet.");
+    if (!eventId || !isValidObjectId(String(eventId))) {
+      setRsvpError("This event is demo/demo-data and cannot be saved yet.");
       return;
     }
 

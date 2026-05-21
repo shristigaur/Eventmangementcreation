@@ -4,6 +4,7 @@ import { eventAPI, rsvpAPI } from "../api/index.js";
 import { useAuth } from "../context/AuthContext";
 import logger from "../utils/logger.js";
 import ModernFooter from "../modern/ModernFooter";
+import { isValidObjectId } from "../utils/idUtils.js";
 
 const EventCard = ({ event, type, rsvpStatus, onRsvp }) => {
   const eventId = event._id || event.id;
@@ -70,17 +71,17 @@ const EventCard = ({ event, type, rsvpStatus, onRsvp }) => {
       {type === 'joined' && (
         <div className="mt-3 flex gap-2">
           <button
-            onClick={() => onRsvp(event._id, 'going')}
+            onClick={() => isValidObjectId(String(eventId)) && onRsvp(eventId, 'going')}
             className={`flex-1 py-2 rounded-lg font-semibold ${rsvpStatus === 'going' ? 'bg-emerald-600 text-white' : 'bg-white border border-emerald-100'}`}>
             ✓ Going
           </button>
           <button
-            onClick={() => onRsvp(event._id, 'maybe')}
+            onClick={() => isValidObjectId(String(eventId)) && onRsvp(eventId, 'maybe')}
             className={`flex-1 py-2 rounded-lg font-semibold ${rsvpStatus === 'maybe' ? 'bg-yellow-500 text-white' : 'bg-white border border-emerald-100'}`}>
             ? Maybe
           </button>
           <button
-            onClick={() => onRsvp(event._id, 'decline')}
+            onClick={() => isValidObjectId(String(eventId)) && onRsvp(eventId, 'decline')}
             className={`flex-1 py-2 rounded-lg font-semibold ${rsvpStatus === 'decline' ? 'bg-red-600 text-white' : 'bg-white border border-emerald-100'}`}>
             ✕ Decline
           </button>
@@ -113,20 +114,22 @@ export default function MyEvents() {
         logger.data("FETCH", "Created Events", { userId: user._id });
         // Fetch created events
         const createdRes = await eventAPI.getUserEvents(user._id);
-        setCreatedEvents(createdRes.data || []);
-        logger.stateUpdate("MyEvents", "createdEvents", `${createdRes.data?.length || 0} events`);
+        const createdList = Array.isArray(createdRes.data?.data) ? createdRes.data.data : [];
+        setCreatedEvents(createdList);
+        logger.stateUpdate("MyEvents", "createdEvents", `${createdList.length} events`);
 
         logger.data("FETCH", "Joined Events", { userId: user._id });
         // Fetch joined events
         const joinedRes = await eventAPI.getUserJoinedEvents(user._id);
-        setJoinedEvents(joinedRes.data || []);
+        const joinedList = Array.isArray(joinedRes.data?.data) ? joinedRes.data.data : [];
+        setJoinedEvents(joinedList);
         // initialize rsvp map for joined events
         const map = {};
-        (joinedRes.data || []).forEach((ev) => {
+        joinedList.forEach((ev) => {
           map[ev._id] = null;
         });
         setRsvpMap(map);
-        logger.stateUpdate("MyEvents", "joinedEvents", `${joinedRes.data?.length || 0} events`);
+        logger.stateUpdate("MyEvents", "joinedEvents", `${joinedList.length} events`);
 
         setError("");
       } catch (err) {
@@ -143,7 +146,7 @@ export default function MyEvents() {
   const refreshEvent = async (eventId) => {
     try {
       const res = await eventAPI.getEventById(eventId);
-      const updated = res.data;
+      const updated = res.data?.data;
       setCreatedEvents((prev) => prev.map((e) => (e._id === eventId ? updated : e)));
       setJoinedEvents((prev) => prev.map((e) => (e._id === eventId ? updated : e)));
     } catch {

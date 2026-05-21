@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { eventAPI, rsvpAPI } from "../api/index.js";
+import { isValidObjectId } from "../utils/idUtils.js";
 import logger from "../utils/logger.js";
 import ModernFooter from "../modern/ModernFooter";
 
@@ -52,11 +53,17 @@ export default function EventDetails() {
 
   const fetchRsvpStatus = async () => {
     try {
+      if (!isValidObjectId(String(id))) {
+        setRsvpStatus(null);
+        return;
+      }
+
       console.log("[RSVP] Fetching current user's RSVP", { eventId: id });
       const rsvpRes = await rsvpAPI.getMyRsvp(id);
-      setRsvpStatus(rsvpRes.data.status);
-      logger.stateUpdate("EventDetails", "rsvpStatus", rsvpRes.data.status);
-      console.log("[RSVP] Current RSVP loaded", rsvpRes.data);
+      const nextStatus = rsvpRes.data?.data?.status || null;
+      setRsvpStatus(nextStatus);
+      logger.stateUpdate("EventDetails", "rsvpStatus", nextStatus);
+      console.log("[RSVP] Current RSVP loaded", rsvpRes.data?.data);
     } catch (err) {
       console.error("[RSVP] Failed to fetch current user's RSVP", err);
       logger.data("FETCH", "RSVP Status", { status: "not_rsvped" });
@@ -66,15 +73,21 @@ export default function EventDetails() {
 
   const fetchRsvpCounts = async () => {
     try {
+      if (!isValidObjectId(String(id))) {
+        setRsvpCounts(emptyRsvpCounts);
+        return;
+      }
+
       console.log("[RSVP] Fetching RSVP stats", { eventId: id });
       const statsRes = await rsvpAPI.getRsvpStats(id);
+      const statsData = statsRes.data?.data || emptyRsvpCounts;
       setRsvpCounts({
-        going: statsRes.data.going || 0,
-        maybe: statsRes.data.maybe || 0,
-        decline: statsRes.data.decline || 0,
-        total: statsRes.data.total || 0,
+        going: statsData.going || 0,
+        maybe: statsData.maybe || 0,
+        decline: statsData.decline || 0,
+        total: statsData.total || 0,
       });
-      console.log("[RSVP] RSVP stats loaded", statsRes.data);
+      console.log("[RSVP] RSVP stats loaded", statsData);
     } catch (err) {
       console.error("[RSVP] Failed to fetch RSVP stats", err);
       setRsvpCounts(emptyRsvpCounts);
@@ -89,9 +102,23 @@ export default function EventDetails() {
     const fetchEvent = async () => {
       try {
         setIsLoading(true);
+        if (!isValidObjectId(String(id))) {
+          // If id looks invalid, try to use location.state.event if provided
+          if (location.state?.event) {
+            setEvent(location.state.event);
+            setError("");
+            await fetchRsvpStatus();
+            await fetchRsvpCounts();
+            setIsLoading(false);
+            return;
+          }
+
+          throw new Error('Invalid event ID');
+        }
+
         const response = await eventAPI.getEventById(id);
-        setEvent(response.data);
-        logger.stateUpdate("EventDetails", "event", response.data);
+        setEvent(response.data?.data || null);
+        logger.stateUpdate("EventDetails", "event", response.data?.data || null);
         
         await fetchRsvpStatus();
         await fetchRsvpCounts();
@@ -147,7 +174,7 @@ export default function EventDetails() {
         setRsvpStatus(status);
         updateRsvpCounts(previousStatus, status);
         logger.stateUpdate("EventDetails", "rsvpStatus", status);
-        console.log("[RSVP] RSVP saved", response.data);
+        console.log("[RSVP] RSVP saved", response.data?.data);
       }
 
       await fetchRsvpCounts();
