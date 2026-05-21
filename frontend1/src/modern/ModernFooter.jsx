@@ -22,7 +22,7 @@ export default function ModernFooter() {
           <div>
             <h4 className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-900">Discover</h4>
             <nav className="mt-3 flex flex-col gap-2">
-              <Link to="/" className="text-sm text-slate-700 hover:text-emerald-600 transition">Home</Link>
+              <Link to="/home" className="text-sm text-slate-700 hover:text-emerald-600 transition">Home</Link>
               <a href="#business" className="text-sm text-slate-700 hover:text-emerald-600 transition">Business</a>
               <a href="#festivals" className="text-sm text-slate-700 hover:text-emerald-600 transition">Festivals</a>
               <a href="#art" className="text-sm text-slate-700 hover:text-emerald-600 transition">Art</a>

@@ -1,44 +1,72 @@
+import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 import EventCard from "../components/EventCard";
+import { eventAPI } from "../api/index.js";
+
+const fallbackEvents = [
+  {
+    id: 1,
+    title: "Tech Conference 2026",
+    date: "June 10, 2026",
+    location: "Delhi",
+    image: "https://source.unsplash.com/400x300/?conference",
+  },
+  {
+    id: 2,
+    title: "Music Fest",
+    date: "July 5, 2026",
+    location: "Mumbai",
+    image: "https://source.unsplash.com/400x300/?music",
+  },
+  {
+    id: 3,
+    title: "Startup Meetup",
+    date: "August 20, 2026",
+    location: "Bangalore",
+    image: "https://source.unsplash.com/400x300/?startup",
+  },
+  {
+    id: 4,
+    title: "Art Exhibition",
+    date: "September 12, 2026",
+    location: "Jaipur",
+    image: "https://source.unsplash.com/400x300/?art",
+  },
+];
 
 function Home() {
-  const events = [
-    {
-      id: 1,
-      title: "Tech Conference 2026",
-      date: "June 10, 2026",
-      location: "Delhi",
-      image: "https://source.unsplash.com/400x300/?conference",
-    },
-    {
-      id: 2,
-      title: "Music Fest",
-      date: "July 5, 2026",
-      location: "Mumbai",
-      image: "https://source.unsplash.com/400x300/?music",
-    },
-    {
-      id: 3,
-      title: "Startup Meetup",
-      date: "August 20, 2026",
-      location: "Bangalore",
-      image: "https://source.unsplash.com/400x300/?startup",
-    },
-    {
-      id: 4,
-      title: "Art Exhibition",
-      date: "September 12, 2026",
-      location: "Jaipur",
-      image: "https://source.unsplash.com/400x300/?art",
-    },
-  ];
+  const [events, setEvents] = useState(fallbackEvents);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadEvents = async () => {
+      try {
+        const response = await eventAPI.getAllEvents();
+        const remoteEvents = Array.isArray(response.data) ? response.data : [];
+        if (isMounted && remoteEvents.length > 0) {
+          setEvents(remoteEvents);
+        }
+      } catch {
+        if (isMounted) {
+          setEvents(fallbackEvents);
+        }
+      }
+    };
+
+    void loadEvents();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   return (
     <div className="bg-gray-50 min-h-screen">
       <Navbar />
 
       {/* 🔥 HERO SECTION */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-20 px-6 text-center">
+      <div className="bg-linear-to-r from-blue-600 to-purple-600 text-white py-20 px-6 text-center">
         <h1 className="text-4xl md:text-5xl font-bold mb-4">
           Discover Amazing Events
         </h1>
@@ -75,7 +103,7 @@ function Home() {
 
         <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {events.map((event) => (
-            <EventCard key={event.id} event={event} />
+            <EventCard key={event._id || event.id} event={event} />
           ))}
         </div>
       </div>

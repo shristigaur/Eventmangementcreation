@@ -1,8 +1,12 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { eventAPI } from "../api/index.js";
+import logger from "../utils/logger.js";
 import ModernFooter from "../modern/ModernFooter";
 
 export default function CreateEvent() {
+  const { id: editId } = useParams();
+  const isEditMode = Boolean(editId);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -13,17 +17,51 @@ export default function CreateEvent() {
     image: null,
   });
   const [errors, setErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingEvent, setIsFetchingEvent] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isEditMode) return;
+
+    const fetchEvent = async () => {
+      setIsFetchingEvent(true);
+      setSubmitError("");
+      try {
+        const response = await eventAPI.getEventById(editId);
+        const event = response.data;
+        setFormData({
+          title: event.title || "",
+          description: event.description || "",
+          date: event.date ? String(event.date).slice(0, 10) : "",
+          time: event.time || "",
+          location: event.location || "",
+          category: event.category || "Business",
+          image: null,
+        });
+      } catch (err) {
+        logger.apiError("GET", `/events/${editId}`, err);
+        setSubmitError(err.response?.data?.message || "Failed to load event for editing");
+      } finally {
+        setIsFetchingEvent(false);
+      }
+    };
+
+    fetchEvent();
+  }, [editId, isEditMode]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    logger.stateUpdate("CreateEvent", `formData.${name}`, value);
   };
 
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
       setFormData((prev) => ({ ...prev, image: file }));
+      logger.data("FILE_UPLOAD", "Image", { name: file.name, size: file.size, type: file.type });
     }
   };
 
@@ -34,46 +72,78 @@ export default function CreateEvent() {
     if (!formData.date) newErrors.date = "Date is required";
     if (!formData.time) newErrors.time = "Time is required";
     if (!formData.location) newErrors.location = "Location is required";
+    
+    logger.validation("CreateEvent", Object.keys(newErrors).length === 0, newErrors);
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    logger.userAction("CREATE_EVENT", { title: formData.title });
+    
+    setSubmitError("");
     const newErrors = validateForm();
     if (Object.keys(newErrors).length === 0) {
-      // Mock save - in real app, call API
-      const events = JSON.parse(localStorage.getItem("createdEvents") || "[]");
-      const newEvent = {
-        id: Date.now(),
-        ...formData,
-        image: formData.image ? URL.createObjectURL(formData.image) : "/images/event-default.jpg",
-      };
-      events.push(newEvent);
-      localStorage.setItem("createdEvents", JSON.stringify(events));
-      navigate("/my-events");
+      setIsLoading(true);
+      try {
+        const eventPayload = {
+          title: formData.title,
+          description: formData.description,
+          date: formData.date,
+          time: formData.time,
+          location: formData.location,
+          category: formData.category,
+        };
+
+        logger.data(isEditMode ? "UPDATE" : "CREATE", "Event", eventPayload);
+        const response = isEditMode
+          ? await eventAPI.updateEvent(editId, eventPayload)
+          : await eventAPI.createEvent(eventPayload);
+        
+        logger.data(isEditMode ? "UPDATE_SUCCESS" : "CREATE_SUCCESS", "Event", { eventId: response.data._id });
+        setIsLoading(false);
+        navigate("/my-events");
+      } catch (err) {
+        logger.apiError(isEditMode ? "PUT" : "POST", isEditMode ? `/events/${editId}` : "/events", err);
+        setIsLoading(false);
+        setSubmitError(err.response?.data?.message || `Failed to ${isEditMode ? "update" : "create"} event`);
+        setErrors({});
+      }
     } else {
       setErrors(newErrors);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#f3fbf6] via-white to-[#ecfdf5]">
+    <div className="min-h-screen bg-linear-to-br from-[#f3fbf6] via-white to-[#ecfdf5]">
       <div className="absolute top-0 left-0 w-96 h-96 bg-emerald-100/30 rounded-full blur-3xl -z-10"></div>
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-emerald-200/20 rounded-full blur-3xl -z-10"></div>
 
       <div className="max-w-5xl mx-auto px-6 py-10">
-        <Link to="/" className="inline-flex items-center gap-2 mb-8 text-emerald-700 hover:text-emerald-800 transition">
+        <Link to="/home" className="inline-flex items-center gap-2 mb-8 text-emerald-700 hover:text-emerald-800 transition">
           <span className="text-2xl font-bold">←</span>
           <span className="font-medium">Back to home</span>
         </Link>
 
-        <div className="bg-white/95 backdrop-blur-sm border border-emerald-100 rounded-[2rem] p-8 md:p-10 shadow-2xl shadow-emerald-100">
+        <div className="bg-white/95 backdrop-blur-sm border border-emerald-100 rounded-4xl p-8 md:p-10 shadow-2xl shadow-emerald-100">
           <div className="mb-10">
-            <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-3">Create Your Event</h1>
-            <p className="text-slate-600 text-lg">Share your creative vision with the world</p>
+            <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-3">
+              {isEditMode ? "Edit Your Event" : "Create Your Event"}
+            </h1>
+            <p className="text-slate-600 text-lg">
+              {isEditMode ? "Update your event details and keep guests informed" : "Share your creative vision with the world"}
+            </p>
           </div>
 
+          {isFetchingEvent ? (
+            <div className="py-12 text-center text-slate-600">Loading event...</div>
+          ) : (
           <form onSubmit={handleSubmit} className="space-y-8">
+            {submitError && (
+              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {submitError}
+              </div>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Title */}
               <div className="md:col-span-2">
@@ -195,18 +265,20 @@ export default function CreateEvent() {
             <div className="flex gap-4 pt-6">
               <button
                 type="submit"
-                className="flex-1 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white font-semibold py-4 rounded-xl shadow-lg shadow-emerald-200 hover:shadow-emerald-300 hover:-translate-y-1 transition duration-300 text-lg"
+                disabled={isLoading}
+                className="flex-1 bg-linear-to-r from-emerald-600 to-emerald-700 text-white font-semibold py-4 rounded-xl shadow-lg shadow-emerald-200 hover:shadow-emerald-300 hover:-translate-y-1 transition duration-300 text-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
               >
-                Create Event
+                {isLoading ? (isEditMode ? "Saving..." : "Creating...") : (isEditMode ? "Save Changes" : "Create Event")}
               </button>
               <Link
-                to="/"
+                to={isEditMode ? "/my-events" : "/home"}
                 className="flex-1 bg-slate-100 text-slate-900 font-semibold py-4 rounded-xl hover:bg-slate-200 transition duration-300 text-center text-lg"
               >
                 Cancel
               </Link>
             </div>
           </form>
+          )}
         </div>
       </div>
       <ModernFooter />

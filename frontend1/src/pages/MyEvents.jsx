@@ -1,63 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { eventAPI, rsvpAPI } from "../api/index.js";
+import { useAuth } from "../context/AuthContext";
+import logger from "../utils/logger.js";
 import ModernFooter from "../modern/ModernFooter";
 
-const mockMyEvents = {
-  created: [
-    {
-      id: 101,
-      title: "Summer Tech Bootcamp",
-      description: "A 2-week intensive bootcamp for aspiring developers",
-      date: "July 15, 2026",
-      time: "10:00 AM",
-      location: "Bangalore Tech Hub",
-      image: "/images/business-event.jpg",
-      category: "Business",
-      attendees: 156,
-      yourRole: "Creator",
-    },
-    {
-      id: 102,
-      title: "Art Workshop",
-      description: "Learn digital art from industry professionals",
-      date: "August 1, 2026",
-      time: "02:00 PM",
-      location: "Delhi Art Center",
-      image: "/images/art-event.jpg",
-      category: "Art",
-      attendees: 45,
-      yourRole: "Creator",
-    },
-  ],
-  joined: [
-    {
-      id: 201,
-      title: "Web Development Conference",
-      description: "Latest trends in web development",
-      date: "June 20, 2026",
-      time: "09:00 AM",
-      location: "Mumbai Convention Center",
-      image: "/images/stage-event.jpg",
-      category: "Business",
-      attendees: 890,
-      yourRole: "Attendee",
-    },
-    {
-      id: 202,
-      title: "Jazz Night",
-      description: "Live jazz performances from renowned artists",
-      date: "July 10, 2026",
-      time: "07:00 PM",
-      location: "Mumbai Beach Club",
-      image: "/images/festival-event.jpg",
-      category: "Festival",
-      attendees: 320,
-      yourRole: "Attendee",
-    },
-  ],
-};
+const EventCard = ({ event, type, rsvpStatus, onRsvp }) => {
+  const eventId = event._id || event.id;
 
-const EventCard = ({ event, type }) => (
+  return (
   <div className="group bg-white border border-emerald-100 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition duration-300" data-reveal>
     <div className="relative h-48 overflow-hidden">
       <img
@@ -100,31 +51,130 @@ const EventCard = ({ event, type }) => (
 
       <div className="flex gap-3">
         <Link
-          to={`/event/${event.id}`}
+          to={`/event/${eventId}`}
+          state={{ event }}
           className="flex-1 bg-emerald-600 text-white font-semibold py-2 rounded-lg hover:bg-emerald-700 transition text-center"
         >
           View Details
         </Link>
         {type === "created" && (
-          <button className="flex-1 bg-slate-200 text-slate-900 font-semibold py-2 rounded-lg hover:bg-slate-300 transition">
+          <Link
+            to={`/event/${eventId}/edit`}
+            className="flex-1 bg-slate-200 text-slate-900 font-semibold py-2 rounded-lg hover:bg-slate-300 transition text-center"
+          >
             Edit
-          </button>
+          </Link>
         )}
       </div>
+
+      {type === 'joined' && (
+        <div className="mt-3 flex gap-2">
+          <button
+            onClick={() => onRsvp(event._id, 'going')}
+            className={`flex-1 py-2 rounded-lg font-semibold ${rsvpStatus === 'going' ? 'bg-emerald-600 text-white' : 'bg-white border border-emerald-100'}`}>
+            ✓ Going
+          </button>
+          <button
+            onClick={() => onRsvp(event._id, 'maybe')}
+            className={`flex-1 py-2 rounded-lg font-semibold ${rsvpStatus === 'maybe' ? 'bg-yellow-500 text-white' : 'bg-white border border-emerald-100'}`}>
+            ? Maybe
+          </button>
+          <button
+            onClick={() => onRsvp(event._id, 'decline')}
+            className={`flex-1 py-2 rounded-lg font-semibold ${rsvpStatus === 'decline' ? 'bg-red-600 text-white' : 'bg-white border border-emerald-100'}`}>
+            ✕ Decline
+          </button>
+        </div>
+      )}
     </div>
   </div>
-);
+  );
+};
 
 export default function MyEvents() {
   const [activeTab, setActiveTab] = useState("created");
+  const [createdEvents, setCreatedEvents] = useState([]);
+  const [joinedEvents, setJoinedEvents] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [rsvpMap, setRsvpMap] = useState({});
+  const { user } = useAuth();
+
+  // Fetch user's events on mount
+  useEffect(() => {
+    logger.lifecycle("MyEvents", "MOUNT");
+    const fetchEvents = async () => {
+      if (!user?._id) {
+        logger.auth("NO_USER", { message: "User not found in context" });
+        return;
+      }
+      try {
+        setIsLoading(true);
+        logger.data("FETCH", "Created Events", { userId: user._id });
+        // Fetch created events
+        const createdRes = await eventAPI.getUserEvents(user._id);
+        setCreatedEvents(createdRes.data || []);
+        logger.stateUpdate("MyEvents", "createdEvents", `${createdRes.data?.length || 0} events`);
+
+        logger.data("FETCH", "Joined Events", { userId: user._id });
+        // Fetch joined events
+        const joinedRes = await eventAPI.getUserJoinedEvents(user._id);
+        setJoinedEvents(joinedRes.data || []);
+        // initialize rsvp map for joined events
+        const map = {};
+        (joinedRes.data || []).forEach((ev) => {
+          map[ev._id] = null;
+        });
+        setRsvpMap(map);
+        logger.stateUpdate("MyEvents", "joinedEvents", `${joinedRes.data?.length || 0} events`);
+
+        setError("");
+      } catch (err) {
+        logger.apiError("GET", `/users/${user._id}/events`, err);
+        setError("Failed to load your events");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchEvents();
+  }, [user]);
+
+  const refreshEvent = async (eventId) => {
+    try {
+      const res = await eventAPI.getEventById(eventId);
+      const updated = res.data;
+      setCreatedEvents((prev) => prev.map((e) => (e._id === eventId ? updated : e)));
+      setJoinedEvents((prev) => prev.map((e) => (e._id === eventId ? updated : e)));
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleRsvp = async (eventId, status) => {
+    try {
+      const current = rsvpMap[eventId];
+      if (current === status) {
+        // remove
+        await rsvpAPI.removeRsvp(eventId);
+        setRsvpMap((m) => ({ ...m, [eventId]: null }));
+      } else {
+        await rsvpAPI.addRsvp(eventId, { status, guestCount: 1 });
+        setRsvpMap((m) => ({ ...m, [eventId]: status }));
+      }
+      await refreshEvent(eventId);
+    } catch (err) {
+      console.error('RSVP error', err);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#f3fbf6] via-white to-[#ecfdf5]">
+    <div className="min-h-screen bg-linear-to-br from-[#f3fbf6] via-white to-[#ecfdf5]">
       <div className="absolute top-0 left-0 w-96 h-96 bg-emerald-100/30 rounded-full blur-3xl -z-10"></div>
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-emerald-200/20 rounded-full blur-3xl -z-10"></div>
 
       <div className="max-w-7xl mx-auto px-6 py-10">
-        <Link to="/" className="inline-flex items-center gap-2 mb-8 text-emerald-700 hover:text-emerald-800 transition">
+        <Link to="/home" className="inline-flex items-center gap-2 mb-8 text-emerald-700 hover:text-emerald-800 transition">
           <span className="text-2xl font-bold">←</span>
           <span className="font-medium">Back to home</span>
         </Link>
@@ -144,7 +194,7 @@ export default function MyEvents() {
                 : "text-slate-700 hover:bg-emerald-50"
             }`}
           >
-            📝 Created ({mockMyEvents.created.length})
+            📝 Created ({createdEvents.length})
           </button>
           <button
             onClick={() => setActiveTab("joined")}
@@ -154,65 +204,88 @@ export default function MyEvents() {
                 : "text-slate-700 hover:bg-emerald-50"
             }`}
           >
-            ✓ Joined ({mockMyEvents.joined.length})
+            ✓ Joined ({joinedEvents.length})
           </button>
         </div>
 
+        {/* Loading State */}
+        {isLoading && (
+          <div className="text-center py-12">
+            <p className="text-slate-600">Loading your events...</p>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 text-red-700">
+            {error}
+          </div>
+        )}
+
         {/* Events Grid */}
-        <div>
-          {activeTab === "created" ? (
-            <div>
-              {mockMyEvents.created.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {mockMyEvents.created.map((event) => (
-                    <EventCard key={event.id} event={event} type="created" />
-                  ))}
-                </div>
-              ) : (
-                <div className="bg-white/95 backdrop-blur-sm border border-emerald-100 rounded-2xl p-12 text-center">
-                  <p className="text-2xl mb-2">📭</p>
-                  <p className="text-xl font-bold text-slate-900 mb-2">No events created yet</p>
-                  <p className="text-slate-600 mb-6">Start creating your first event to bring people together</p>
-                  <Link
-                    to="/create-event"
-                    className="inline-block bg-emerald-600 text-white font-semibold px-8 py-3 rounded-xl hover:bg-emerald-700 transition"
-                  >
-                    Create Your First Event
-                  </Link>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div>
-              {mockMyEvents.joined.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {mockMyEvents.joined.map((event) => (
-                    <EventCard key={event.id} event={event} type="joined" />
-                  ))}
-                </div>
-              ) : (
-                <div className="bg-white/95 backdrop-blur-sm border border-emerald-100 rounded-2xl p-12 text-center">
-                  <p className="text-2xl mb-2">🎭</p>
-                  <p className="text-xl font-bold text-slate-900 mb-2">No events joined yet</p>
-                  <p className="text-slate-600 mb-6">Explore and RSVP to events to add them here</p>
-                  <Link
-                    to="/"
-                    className="inline-block bg-emerald-600 text-white font-semibold px-8 py-3 rounded-xl hover:bg-emerald-700 transition"
-                  >
-                    Explore Events
-                  </Link>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+        {!isLoading && (
+          <div>
+            {activeTab === "created" ? (
+              <div>
+                {createdEvents.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {createdEvents.map((event) => (
+                      <EventCard key={event._id || event.id} event={event} type="created" showAttendance={false} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="bg-white/95 backdrop-blur-sm border border-emerald-100 rounded-2xl p-12 text-center">
+                    <p className="text-2xl mb-2">📭</p>
+                    <p className="text-xl font-bold text-slate-900 mb-2">No events created yet</p>
+                    <p className="text-slate-600 mb-6">Start creating your first event to bring people together</p>
+                    <Link
+                      to="/create-event"
+                      className="inline-block bg-emerald-600 text-white font-semibold px-8 py-3 rounded-xl hover:bg-emerald-700 transition"
+                    >
+                      Create Your First Event
+                    </Link>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div>
+                {joinedEvents.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {joinedEvents.map((event) => (
+                      <EventCard
+                        key={event._id || event.id}
+                        event={event}
+                        type="joined"
+                        showAttendance={false}
+                        rsvpStatus={rsvpMap[event._id]}
+                        onRsvp={handleRsvp}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="bg-white/95 backdrop-blur-sm border border-emerald-100 rounded-2xl p-12 text-center">
+                    <p className="text-2xl mb-2">🎭</p>
+                    <p className="text-xl font-bold text-slate-900 mb-2">No events joined yet</p>
+                    <p className="text-slate-600 mb-6">Explore and RSVP to events to add them here</p>
+                    <Link
+                      to="/home"
+                      className="inline-block bg-emerald-600 text-white font-semibold px-8 py-3 rounded-xl hover:bg-emerald-700 transition"
+                    >
+                      Explore Events
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Action Button */}
-        {activeTab === "created" && mockMyEvents.created.length > 0 && (
+        {activeTab === "created" && createdEvents.length > 0 && (
           <div className="mt-12 text-center">
             <Link
               to="/create-event"
-              className="inline-block bg-gradient-to-r from-emerald-600 to-emerald-700 text-white font-semibold px-8 py-4 rounded-xl shadow-lg shadow-emerald-200 hover:shadow-emerald-300 hover:-translate-y-1 transition"
+              className="inline-block bg-linear-to-r from-emerald-600 to-emerald-700 text-white font-semibold px-8 py-4 rounded-xl shadow-lg shadow-emerald-200 hover:shadow-emerald-300 hover:-translate-y-1 transition"
             >
               + Create Another Event
             </Link>

@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import logger from "../utils/logger.js";
 
 export default function SignUp() {
   const [formData, setFormData] = useState({
@@ -9,7 +11,12 @@ export default function SignUp() {
     confirmPassword: "",
   });
   const [errors, setErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [signupError, setSignupError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
+  const { register } = useAuth();
 
   const validateForm = () => {
     const newErrors = {};
@@ -21,28 +28,48 @@ export default function SignUp() {
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = "Passwords do not match";
     }
+    
+    logger.validation("SignUp", Object.keys(newErrors).length === 0, newErrors);
     return newErrors;
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    logger.stateUpdate("SignUp", `formData.${name}`, value);
   };
 
-  const handleSignUp = (e) => {
+  const handleSignUp = async (e) => {
     e.preventDefault();
+    logger.userAction("SIGNUP_ATTEMPT", { email: formData.email });
+    
+    setSignupError("");
     const newErrors = validateForm();
     if (Object.keys(newErrors).length === 0) {
-      // Mock signup - in real app, call API
-      localStorage.setItem("user", JSON.stringify({ email: formData.email, fullName: formData.fullName, role: "user" }));
-      navigate("/");
+      setIsLoading(true);
+      logger.data("REGISTER", "User", { email: formData.email, name: formData.fullName });
+      
+      const result = await register({
+        name: formData.fullName,
+        email: formData.email,
+        password: formData.password,
+      });
+      setIsLoading(false);
+
+      if (result.success) {
+        logger.auth("SIGNUP_SUCCESS", { userId: result.user._id, email: formData.email });
+        navigate("/home");
+      } else {
+        logger.auth("SIGNUP_FAILED", { error: result.error });
+        setSignupError(result.error || "Registration failed");
+      }
     } else {
       setErrors(newErrors);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#f3fbf6] via-white to-[#ecfdf5] flex items-center justify-center px-6 py-10">
+    <div className="min-h-screen bg-linear-to-br from-[#f3fbf6] via-white to-[#ecfdf5] flex items-center justify-center px-6 py-10">
       <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-100/30 rounded-full blur-3xl -z-10"></div>
       <div className="absolute bottom-0 left-0 w-96 h-96 bg-emerald-200/20 rounded-full blur-3xl -z-10"></div>
 
@@ -52,13 +79,18 @@ export default function SignUp() {
           <span className="font-medium">Back to home</span>
         </Link>
 
-        <div className="bg-white/95 backdrop-blur-sm border border-emerald-100 rounded-[2rem] p-8 shadow-2xl shadow-emerald-100">
+        <div className="bg-white/95 backdrop-blur-sm border border-emerald-100 rounded-4xl p-8 shadow-2xl shadow-emerald-100">
           <div className="mb-8">
             <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-2">Create Account</h1>
             <p className="text-slate-600">Join Eventify and discover amazing events</p>
           </div>
 
           <form onSubmit={handleSignUp} className="space-y-5">
+            {signupError && (
+              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {signupError}
+              </div>
+            )}
             <div>
               <label className="block text-sm font-semibold text-slate-900 mb-2">Full Name</label>
               <input
@@ -91,31 +123,51 @@ export default function SignUp() {
 
             <div>
               <label className="block text-sm font-semibold text-slate-900 mb-2">Password</label>
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="••••••••"
-                className={`w-full px-4 py-3 rounded-xl border-2 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 ${
-                  errors.password ? "border-red-300 bg-red-50" : "border-emerald-100 bg-emerald-50/30"
-                }`}
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="••••••••"
+                  className={`w-full px-4 py-3 pr-12 rounded-xl border-2 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 ${
+                    errors.password ? "border-red-300 bg-red-50" : "border-emerald-100 bg-emerald-50/30"
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((value) => !value)}
+                  className="absolute inset-y-0 right-3 flex items-center text-slate-500 transition hover:text-emerald-700"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? "🙈" : "👁️"}
+                </button>
+              </div>
               {errors.password && <p className="text-sm text-red-600 mt-1">{errors.password}</p>}
             </div>
 
             <div>
               <label className="block text-sm font-semibold text-slate-900 mb-2">Confirm Password</label>
-              <input
-                type="password"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                placeholder="••••••••"
-                className={`w-full px-4 py-3 rounded-xl border-2 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 ${
-                  errors.confirmPassword ? "border-red-300 bg-red-50" : "border-emerald-100 bg-emerald-50/30"
-                }`}
-              />
+              <div className="relative">
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  placeholder="••••••••"
+                  className={`w-full px-4 py-3 pr-12 rounded-xl border-2 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 ${
+                    errors.confirmPassword ? "border-red-300 bg-red-50" : "border-emerald-100 bg-emerald-50/30"
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword((value) => !value)}
+                  className="absolute inset-y-0 right-3 flex items-center text-slate-500 transition hover:text-emerald-700"
+                  aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                >
+                  {showConfirmPassword ? "🙈" : "👁️"}
+                </button>
+              </div>
               {errors.confirmPassword && <p className="text-sm text-red-600 mt-1">{errors.confirmPassword}</p>}
             </div>
 
@@ -135,9 +187,10 @@ export default function SignUp() {
 
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 text-white font-semibold py-3 rounded-xl shadow-lg shadow-emerald-200 hover:shadow-emerald-300 hover:-translate-y-0.5 transition duration-300"
+              disabled={isLoading}
+              className="w-full bg-linear-to-r from-emerald-600 to-emerald-700 text-white font-semibold py-3 rounded-xl shadow-lg shadow-emerald-200 hover:shadow-emerald-300 hover:-translate-y-0.5 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
             >
-              Create Account
+              {isLoading ? "Creating Account..." : "Create Account"}
             </button>
           </form>
 

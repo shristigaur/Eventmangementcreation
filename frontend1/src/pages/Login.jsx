@@ -1,11 +1,17 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { ADMIN_EMAIL, ADMIN_PASSWORD, createAdminSession } from "../utils/adminAuth.js";
+import logger from "../utils/logger.js";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState({});
+  const [authError, setAuthError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const validateForm = () => {
     const newErrors = {};
@@ -13,23 +19,57 @@ export default function Login() {
     else if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = "Email is invalid";
     if (!password) newErrors.password = "Password is required";
     else if (password.length < 6) newErrors.password = "Password must be at least 6 characters";
+    
+    logger.validation("Login", Object.keys(newErrors).length === 0, newErrors);
     return newErrors;
   };
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
+    logger.userAction("LOGIN_ATTEMPT", { email });
+    
+    setAuthError("");
     const newErrors = validateForm();
     if (Object.keys(newErrors).length === 0) {
-      // Mock login - in real app, call API
-      localStorage.setItem("user", JSON.stringify({ email, role: "user" }));
-      navigate("/");
+      setIsLoading(true);
+      logger.data("LOGIN", "User", { email });
+
+      const normalizedEmail = email.trim().toLowerCase();
+      if (normalizedEmail === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+        const backendLogin = await login(email, password);
+
+        if (backendLogin.success) {
+          logger.auth("ADMIN_LOGIN_SUCCESS", { email });
+          setIsLoading(false);
+          navigate("/admin", { replace: true });
+          return;
+        }
+
+        const adminSession = createAdminSession();
+        localStorage.setItem("user", JSON.stringify(adminSession));
+        logger.auth("ADMIN_LOGIN_FALLBACK", { email });
+        setIsLoading(false);
+        navigate("/admin", { replace: true });
+        return;
+      }
+      
+      const result = await login(email, password);
+      setIsLoading(false);
+      
+      if (result.success) {
+        logger.auth("LOGIN_SUCCESS", { userId: result.user._id, email });
+        navigate("/home");
+      } else {
+        logger.auth("LOGIN_FAILED", { error: result.error });
+        setAuthError(result.error || "Login failed");
+      }
     } else {
       setErrors(newErrors);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#f3fbf6] via-white to-[#ecfdf5] flex items-center justify-center px-6 py-10">
+    <div className="min-h-screen bg-linear-to-br from-[#f3fbf6] via-white to-[#ecfdf5] flex items-center justify-center px-6 py-10">
       <div className="absolute top-0 left-0 w-96 h-96 bg-emerald-100/30 rounded-full blur-3xl -z-10"></div>
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-emerald-200/20 rounded-full blur-3xl -z-10"></div>
 
@@ -39,13 +79,18 @@ export default function Login() {
           <span className="font-medium">Back to home</span>
         </Link>
 
-        <div className="bg-white/95 backdrop-blur-sm border border-emerald-100 rounded-[2rem] p-8 shadow-2xl shadow-emerald-100">
+        <div className="bg-white/95 backdrop-blur-sm border border-emerald-100 rounded-4xl p-8 shadow-2xl shadow-emerald-100">
           <div className="mb-8">
             <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-2">Welcome Back</h1>
             <p className="text-slate-600">Sign in to your Eventify account</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-6">
+            {authError && (
+              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {authError}
+              </div>
+            )}
             <div>
               <label className="block text-sm font-semibold text-slate-900 mb-2">Email Address</label>
               <input
@@ -86,9 +131,10 @@ export default function Login() {
 
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 text-white font-semibold py-3 rounded-xl shadow-lg shadow-emerald-200 hover:shadow-emerald-300 hover:-translate-y-0.5 transition duration-300"
+              disabled={isLoading}
+              className={`w-full bg-linear-to-r from-emerald-600 to-emerald-700 text-white font-semibold py-3 rounded-xl shadow-lg shadow-emerald-200 hover:shadow-emerald-300 hover:-translate-y-0.5 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none`}
             >
-              Sign In
+              {isLoading ? "Signing in..." : "Sign In"}
             </button>
           </form>
 
