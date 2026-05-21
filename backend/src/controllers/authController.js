@@ -212,3 +212,94 @@ export const getCurrentUser = async (req, res, next) => {
     next(error);
   }
 };
+
+/**
+ * Update current user profile
+ * PUT /api/auth/users/:userId
+ * Protected route - requires valid JWT token
+ */
+export const updateUserProfile = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const authUser = req.user;
+
+    if (!authUser) {
+      return res.status(401).json({
+        success: false,
+        message: 'User not authenticated',
+      });
+    }
+
+    if (authUser._id.toString() !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: 'You can only update your own profile',
+      });
+    }
+
+    if (!isDbConnected()) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database is not connected. Please try again shortly.',
+      });
+    }
+
+    const { name, fullName, email } = req.body || {};
+    const updateData = {};
+
+    const resolvedName = (name || fullName || '').trim();
+    if (resolvedName) {
+      updateData.name = resolvedName;
+    }
+
+    if (typeof email === 'string' && email.trim()) {
+      updateData.email = email.trim().toLowerCase();
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No valid fields provided to update',
+      });
+    }
+
+    if (updateData.email) {
+      const duplicate = await User.findOne({
+        email: updateData.email,
+        _id: { $ne: userId },
+      });
+
+      if (duplicate) {
+        return res.status(409).json({
+          success: false,
+          message: 'Email already registered',
+        });
+      }
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Profile updated successfully',
+      user: {
+        _id: updatedUser._id,
+        name: updatedUser.name,
+        fullName: updatedUser.name,
+        email: updatedUser.email,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};

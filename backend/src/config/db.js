@@ -1,45 +1,87 @@
 /**
  * MongoDB Connection Configuration
- * Establishes connection to MongoDB using Mongoose
- * Supports both local MongoDB and MongoDB Atlas
+ * Supports MongoDB Atlas & Local MongoDB
  */
 
 import mongoose from 'mongoose';
 
+// Disable mongoose buffering
 mongoose.set('bufferCommands', false);
 
+/**
+ * Get current database connection status
+ */
 export const getDbStatus = () => {
-  const states = ['disconnected', 'connected', 'connecting', 'disconnecting'];
+  const states = [
+    'disconnected',
+    'connected',
+    'connecting',
+    'disconnecting',
+  ];
+
   return states[mongoose.connection.readyState] || 'unknown';
 };
 
-export const isDbConnected = () => mongoose.connection.readyState === 1;
+/**
+ * Check if database is connected
+ */
+export const isDbConnected = () => {
+  return mongoose.connection.readyState === 1;
+};
 
+/**
+ * Connect to MongoDB
+ */
 const connectDB = async () => {
   try {
-    const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI;
+    // Get Mongo URI from environment variables
+    const mongoURI =
+      process.env.MONGODB_URI || process.env.MONGO_URI;
 
-    console.log(`🗄️  MongoDB status before connect: ${getDbStatus()}`);
+    console.log(
+      `🗄️ MongoDB status before connect: ${getDbStatus()}`
+    );
 
-    if (!mongoUri) {
-      throw new Error('MONGO_URI is not defined in environment variables');
+    // Check if URI exists
+    if (!mongoURI) {
+      throw new Error(
+        'MONGODB_URI / MONGO_URI is not defined in environment variables'
+      );
     }
 
-    const conn = await mongoose.connect(mongoUri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
+    // Connect to MongoDB
+    const conn = await mongoose.connect(mongoURI, {
+      serverSelectionTimeoutMS: 5000,
     });
 
-    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
-    console.log(`🗄️  MongoDB status after connect: ${getDbStatus()}`);
+    console.log(
+      `✅ MongoDB Connected: ${conn.connection.host}`
+    );
+
+    console.log(
+      `🗄️ MongoDB status after connect: ${getDbStatus()}`
+    );
+
     return conn;
   } catch (error) {
-    console.error(`❌ Database connection failed: ${error.message}`);
+    console.error(
+      `❌ MongoDB connection failed: ${error.message}`
+    );
+
     console.error(error.stack);
-    console.log(`🗄️  MongoDB status after failure: ${getDbStatus()}`);
-    console.log('⚠️  Server will continue running without database connection');
-    console.log('   Note: Database features will not work until MongoDB is available');
+
+    console.log(
+      `🗄️ MongoDB status after failure: ${getDbStatus()}`
+    );
+
+    console.log(
+      '⚠️ Server will continue running without database connection'
+    );
+
     return null;
+
+    // If you want server to stop on DB failure, use:
+    // process.exit(1);
   }
 };
 

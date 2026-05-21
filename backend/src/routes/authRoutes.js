@@ -11,6 +11,7 @@ import {
   register,
   login,
   getCurrentUser,
+  updateUserProfile,
 } from '../controllers/authController.js';
 import authMiddleware from '../middleware/authMiddleware.js';
 import asyncHandler from '../utils/asyncHandler.js';
@@ -41,5 +42,11 @@ router.post('/login', asyncHandler(login));
  * Returns: { user }
  */
 router.get('/me', authMiddleware, asyncHandler(getCurrentUser));
+
+/**
+ * PUT /users/:userId
+ * Update current authenticated user profile
+ */
+router.put('/users/:userId', authMiddleware, asyncHandler(updateUserProfile));
 
 export default router;
