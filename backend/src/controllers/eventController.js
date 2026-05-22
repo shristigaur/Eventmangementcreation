@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import Event from '../models/Event.js';
 import RSVP from '../models/RSVP.js';
+import { isDbConnected } from '../config/db.js';
 
 const DEFAULT_IMAGE =
   'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80';
@@ -62,6 +63,13 @@ const enrichAttendees = async (events) => {
  */
 export const createEvent = async (req, res, next) => {
   try {
+    if (!isDbConnected()) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database is unavailable. Please try again shortly.',
+      });
+    }
+
     const {
       title,
       description,
@@ -117,6 +125,13 @@ export const createEvent = async (req, res, next) => {
  */
 export const getAllEvents = async (req, res, next) => {
   try {
+    if (!isDbConnected()) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database is unavailable. Please try again shortly.',
+      });
+    }
+
     const { q, category, creatorId } = req.query;
 
     const filter = {};
@@ -164,6 +179,13 @@ export const getAllEvents = async (req, res, next) => {
  */
 export const getEventById = async (req, res, next) => {
   try {
+    if (!isDbConnected()) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database is unavailable. Please try again shortly.',
+      });
+    }
+
     const { id } = req.params;
 
     if (!isValidObjectId(id)) {
@@ -199,6 +221,13 @@ export const getEventById = async (req, res, next) => {
  */
 export const updateEvent = async (req, res, next) => {
   try {
+    if (!isDbConnected()) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database is unavailable. Please try again shortly.',
+      });
+    }
+
     const { id } = req.params;
 
     if (!isValidObjectId(id)) {
@@ -298,6 +327,13 @@ export const updateEvent = async (req, res, next) => {
  */
 export const deleteEvent = async (req, res, next) => {
   try {
+    if (!isDbConnected()) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database is unavailable. Please try again shortly.',
+      });
+    }
+
     const { id } = req.params;
 
     if (!isValidObjectId(id)) {
@@ -355,6 +391,13 @@ export const getUserEvents = async (
   next
 ) => {
   try {
+    if (!isDbConnected()) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database is unavailable. Please try again shortly.',
+      });
+    }
+
     const { userId } = req.params;
 
     if (!isValidObjectId(userId)) {
@@ -393,6 +436,13 @@ export const getUserJoinedEvents = async (
   next
 ) => {
   try {
+    if (!isDbConnected()) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database is unavailable. Please try again shortly.',
+      });
+    }
+
     const { userId } = req.params;
 
     if (!isValidObjectId(userId)) {
@@ -435,6 +485,13 @@ export const addComment = async (
   next
 ) => {
   try {
+    if (!isDbConnected()) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database is unavailable. Please try again shortly.',
+      });
+    }
+
     const { id } = req.params;
     const { text } = req.body;
 

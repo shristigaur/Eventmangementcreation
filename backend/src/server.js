@@ -8,7 +8,7 @@ import dotenv from 'dotenv';
 
 dotenv.config({ path: new URL('../.env', import.meta.url).pathname });
 
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT || 5000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
 /* * Start Server
@@ -30,50 +30,10 @@ const startServer = async () => {
       console.warn('⚠️ MongoDB connection failed; server will continue running without DB.');
     }
 
-    // Start listening on port with retry on EADDRINUSE
-    let server = null;
-    const maxAttempts = 5;
-    let attempt = 0;
-    let listenPort = Number(PORT);
-
-    while (attempt < maxAttempts) {
-      try {
-        // eslint-disable-next-line no-await-in-loop
-        server = await new Promise((resolve, reject) => {
-          const s = app.listen(listenPort);
-          s.once('listening', () => resolve(s));
-          s.once('error', (err) => reject(err));
-        });
-        break;
-      } catch (err) {
-        if (err && err.code === 'EADDRINUSE') {
-          console.warn(`Port ${listenPort} is in use, trying next port...`);
-          listenPort += 1;
-          attempt += 1;
-          // small delay before retrying
-          // eslint-disable-next-line no-await-in-loop
-          await new Promise((r) => setTimeout(r, 200));
-          continue;
-        }
-
-        // Unknown error - rethrow
-        throw err;
-      }
-    }
-
-    if (!server) {
-      throw new Error(`Failed to bind to a port after ${maxAttempts} attempts`);
-    }
+    const listenPort = Number(PORT);
+    const server = app.listen(listenPort);
 
     server.on('listening', () => {
-      try {
-        // Write the chosen listen port to a file for local tooling
-        const portFile = new URL('../.backend_port', import.meta.url).pathname;
-        // Use a non-blocking write
-        import('fs').then(({ promises: fs }) => fs.writeFile(portFile, String(listenPort), 'utf8').catch(() => {}));
-      } catch (e) {
-        // ignore
-      }
       console.log(`
 ╔════════════════════════════════════════════╗
 ║   🚀 Event Management Backend              ║

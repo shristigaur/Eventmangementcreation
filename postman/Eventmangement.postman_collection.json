@@ -1,14 +1,14 @@
 {
   "info": {
-    "name": "Eventmangement - Quick API Tests",
-    "_postman_id": "eventmangement-quick-tests",
-    "description": "Health, Register, Login, Create Event requests. Set the collection variable `baseUrl` to point to local or deployed backend.",
+    "name": "Eventmangement - Production API Coverage",
+    "_postman_id": "eventmangement-production-coverage",
+    "description": "Full backend coverage for health, auth, profile, events, RSVP, and user-event routes. Set baseUrl to local or deployed backend.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     {
       "key": "baseUrl",
-      "value": "http://localhost:5001",
+      "value": "http://localhost:5000",
       "type": "string"
     },
     {
@@ -20,6 +20,21 @@
       "key": "uniqueEmail",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "eventId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "rsvpStatus",
+      "value": "going",
+      "type": "string"
     }
   ],
   "item": [
@@ -30,167 +45,382 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/health",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "health"
-          ]
+          "host": ["{{baseUrl}}"],
+          "path": ["health"]
         }
       },
-      "response": []
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', function () { pm.response.to.have.status(200); });"
+            ]
+          }
+        }
+      ]
     },
     {
-      "name": "Register (generate unique email)",
+      "name": "Register User",
       "event": [
         {
           "listen": "prerequest",
           "script": {
+            "type": "text/javascript",
             "exec": [
-              "// generate a unique email for each run",
               "const ts = Date.now();",
-              "const email = `pm.variables.replaceIn('test+${ts}@example.com')`;",
-              "pm.collectionVariables.set('uniqueEmail', `test+${ts}@example.com`);",
-              "console.log('uniqueEmail ->', pm.collectionVariables.get('uniqueEmail'));"
-            ],
-            "type": "text/javascript"
+              "pm.collectionVariables.set('uniqueEmail', `postman+${ts}@example.com`);",
+              "pm.collectionVariables.set('rsvpStatus', 'going');"
+            ]
           }
         },
         {
           "listen": "test",
           "script": {
+            "type": "text/javascript",
             "exec": [
+              "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
               "const resp = pm.response.json();",
-              "if (resp && resp.token) {",
-              "  pm.collectionVariables.set('token', resp.token);",
-              "  console.log('Saved token to collection variable (token)');",
-              "}",
-              "pm.test('status is 201 or 200', function () {",
-              "  pm.response.to.have.status(201);",
-              "});"
-            ],
-            "type": "text/javascript"
+              "pm.collectionVariables.set('token', resp.token);",
+              "pm.collectionVariables.set('userId', resp.user && (resp.user._id || resp.user.id));",
+              "pm.test('token returned', function () { pm.expect(resp.token).to.be.a('string').and.not.empty; });",
+              "pm.test('user returned', function () { pm.expect(resp.user).to.be.an('object'); });"
+            ]
           }
         }
       ],
       "request": {
         "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
+        "header": [{"key": "Content-Type", "value": "application/json"}],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"name\": \"Postman Test\",\n  \"email\": \"{{uniqueEmail}}\",\n  \"password\": \"Password123\",\n  \"confirmPassword\": \"Password123\"\n}"
+          "raw": "{\n  \"name\": \"Postman User\",\n  \"email\": \"{{uniqueEmail}}\",\n  \"password\": \"Password123\",\n  \"confirmPassword\": \"Password123\"\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/api/auth/register",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "auth",
-            "register"
-          ]
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "register"]
         }
-      },
-      "response": []
+      }
     },
     {
-      "name": "Login (use generated email)",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "const resp = pm.response.json();",
-              "if (resp && resp.token) {",
-              "  pm.collectionVariables.set('token', resp.token);",
-              "  console.log('Saved token to collection variable (token)');",
-              "}",
-              "pm.test('status is 200', function () { pm.response.to.have.status(200); });"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ],
+      "name": "Login User",
       "request": {
         "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
+        "header": [{"key": "Content-Type", "value": "application/json"}],
         "body": {
           "mode": "raw",
           "raw": "{\n  \"email\": \"{{uniqueEmail}}\",\n  \"password\": \"Password123\"\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/api/auth/login",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "auth",
-            "login"
-          ]
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "login"]
         }
       },
-      "response": []
-    },
-    {
-      "name": "Create Event (protected)",
       "event": [
-        {
-          "listen": "prerequest",
-          "script": {
-            "exec": [
-              "// ensure token is set in header if available",
-              "const t = pm.collectionVariables.get('token') || '';",
-              "if (t) pm.request.headers.add({ key: 'Authorization', value: `Bearer ${t}` });"
-            ],
-            "type": "text/javascript"
-          }
-        },
         {
           "listen": "test",
           "script": {
+            "type": "text/javascript",
             "exec": [
-              "pm.test('status is 201', function () { pm.response.to.have.status(201); });"
-            ],
-            "type": "text/javascript"
+              "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+              "const resp = pm.response.json();",
+              "pm.collectionVariables.set('token', resp.token);",
+              "pm.collectionVariables.set('userId', resp.user && (resp.user._id || resp.user.id));",
+              "pm.test('token returned', function () { pm.expect(resp.token).to.be.a('string').and.not.empty; });"
+            ]
           }
         }
-      ],
+      ]
+    },
+    {
+      "name": "Get Current User",
       "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
+        "method": "GET",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/me",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "me"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 200', function () { pm.response.to.have.status(200); });",
+              "const resp = pm.response.json();",
+              "pm.test('user returned', function () { pm.expect(resp.user).to.be.an('object'); });"
+            ]
           }
-        ],
+        }
+      ]
+    },
+    {
+      "name": "Update User Profile",
+      "request": {
+        "method": "PUT",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "auth": {
+          "type": "bearer",
+          "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]
+        },
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"title\": \"Postman Created Event\",\n  \"description\": \"Created from Postman tests\",\n  \"date\": \"2026-08-01\",\n  \"time\": \"18:00\",\n  \"location\": \"Online\"\n}"
+          "raw": "{\n  \"name\": \"Postman User Updated\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/users/{{userId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "users", "{{userId}}"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": ["pm.test('status is 200', function () { pm.response.to.have.status(200); });"]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Event",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "auth": {
+          "type": "bearer",
+          "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Postman Event\",\n  \"description\": \"Created from Postman coverage run\",\n  \"date\": \"2026-08-01\",\n  \"time\": \"18:00\",\n  \"location\": \"Online\",\n  \"category\": \"Test\"\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/api/events",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "api",
-            "events"
-          ]
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "events"]
         }
       },
-      "response": []
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+              "const resp = pm.response.json();",
+              "pm.collectionVariables.set('eventId', resp.data && (resp.data._id || resp.data.id));",
+              "pm.test('event returned', function () { pm.expect(pm.collectionVariables.get('eventId')).to.be.a('string').and.not.empty; });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get All Events",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/events",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "events"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {"type": "text/javascript", "exec": ["pm.test('status is 200', function () { pm.response.to.have.status(200); });"]}
+        }
+      ]
+    },
+    {
+      "name": "Search Events",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/events/search?q=Postman",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "events", "search"],
+          "query": [{"key": "q", "value": "Postman"}]
+        }
+      },
+      "event": [
+        {"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('status is 200', function () { pm.response.to.have.status(200); });"]}}
+      ]
+    },
+    {
+      "name": "Category Events",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/events/category?category=Test",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "events", "category"],
+          "query": [{"key": "category", "value": "Test"}]
+        }
+      },
+      "event": [
+        {"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('status is 200', function () { pm.response.to.have.status(200); });"]}}
+      ]
+    },
+    {
+      "name": "Get Event By ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/events/{{eventId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "events", "{{eventId}}"]
+        }
+      },
+      "event": [
+        {"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('status is 200', function () { pm.response.to.have.status(200); });"]}}
+      ]
+    },
+    {
+      "name": "Update Event",
+      "request": {
+        "method": "PUT",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]},
+        "body": {"mode": "raw", "raw": "{\n  \"title\": \"Postman Event Updated\",\n  \"description\": \"Updated from Postman coverage run\",\n  \"date\": \"2026-08-02\",\n  \"time\": \"19:00\",\n  \"location\": \"Remote\",\n  \"category\": \"Test\"\n}"},
+        "url": {"raw": "{{baseUrl}}/api/events/{{eventId}}", "host": ["{{baseUrl}}"], "path": ["api", "events", "{{eventId}}"]}
+      },
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('status is 200', function () { pm.response.to.have.status(200); });"]}}]
+    },
+    {
+      "name": "Patch Event",
+      "request": {
+        "method": "PATCH",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]},
+        "body": {"mode": "raw", "raw": "{\n  \"location\": \"Virtual Venue\"\n}"},
+        "url": {"raw": "{{baseUrl}}/api/events/{{eventId}}", "host": ["{{baseUrl}}"], "path": ["api", "events", "{{eventId}}"]}
+      },
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('status is 200', function () { pm.response.to.have.status(200); });"]}}]
+    },
+    {
+      "name": "Add Comment",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]},
+        "body": {"mode": "raw", "raw": "{\n  \"text\": \"Hello from Postman coverage run\"\n}"},
+        "url": {"raw": "{{baseUrl}}/api/events/{{eventId}}/comment", "host": ["{{baseUrl}}"], "path": ["api", "events", "{{eventId}}", "comment"]}
+      },
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('status is 201', function () { pm.response.to.have.status(201); });"]}}]
+    },
+    {
+      "name": "Add RSVP",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]},
+        "body": {"mode": "raw", "raw": "{\n  \"status\": \"{{rsvpStatus}}\",\n  \"guestCount\": 1,\n  \"comment\": \"Attending from Postman\"\n}"},
+        "url": {"raw": "{{baseUrl}}/api/events/{{eventId}}/rsvp", "host": ["{{baseUrl}}"], "path": ["api", "events", "{{eventId}}", "rsvp"]}
+      },
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('status is 201 or 200', function () { pm.expect([200, 201]).to.include(pm.response.code); });"]}}]
+    },
+    {
+      "name": "Get Event RSVPs",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {"raw": "{{baseUrl}}/api/events/{{eventId}}/rsvps", "host": ["{{baseUrl}}"], "path": ["api", "events", "{{eventId}}", "rsvps"]}
+      },
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('status is 200', function () { pm.response.to.have.status(200); });"]}}]
+    },
+    {
+      "name": "Get My RSVP",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]},
+        "url": {"raw": "{{baseUrl}}/api/events/{{eventId}}/my-rsvp", "host": ["{{baseUrl}}"], "path": ["api", "events", "{{eventId}}", "my-rsvp"]}
+      },
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('status is 200', function () { pm.response.to.have.status(200); });"]}}]
+    },
+    {
+      "name": "Get RSVP Stats",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {"raw": "{{baseUrl}}/api/events/{{eventId}}/rsvp-stats", "host": ["{{baseUrl}}"], "path": ["api", "events", "{{eventId}}", "rsvp-stats"]}
+      },
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('status is 200', function () { pm.response.to.have.status(200); });"]}}]
+    },
+    {
+      "name": "Get User Created Events",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {"raw": "{{baseUrl}}/api/users/{{userId}}/events", "host": ["{{baseUrl}}"], "path": ["api", "users", "{{userId}}", "events"]}
+      },
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('status is 200', function () { pm.response.to.have.status(200); });"]}}]
+    },
+    {
+      "name": "Get User Joined Events",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {"raw": "{{baseUrl}}/api/users/{{userId}}/joined-events", "host": ["{{baseUrl}}"], "path": ["api", "users", "{{userId}}", "joined-events"]}
+      },
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('status is 200', function () { pm.response.to.have.status(200); });"]}}]
+    },
+    {
+      "name": "Get User RSVPs",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {"raw": "{{baseUrl}}/api/users/{{userId}}/rsvps", "host": ["{{baseUrl}}"], "path": ["api", "users", "{{userId}}", "rsvps"]}
+      },
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('status is 200', function () { pm.response.to.have.status(200); });"]}}]
+    },
+    {
+      "name": "Update RSVP",
+      "request": {
+        "method": "PUT",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]},
+        "body": {"mode": "raw", "raw": "{\n  \"status\": \"maybe\",\n  \"guestCount\": 2,\n  \"comment\": \"Updated RSVP from Postman\"\n}"},
+        "url": {"raw": "{{baseUrl}}/api/events/{{eventId}}/rsvp", "host": ["{{baseUrl}}"], "path": ["api", "events", "{{eventId}}", "rsvp"]}
+      },
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('status is 200', function () { pm.response.to.have.status(200); });"]}}]
+    },
+    {
+      "name": "Remove RSVP",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]},
+        "url": {"raw": "{{baseUrl}}/api/events/{{eventId}}/rsvp", "host": ["{{baseUrl}}"], "path": ["api", "events", "{{eventId}}", "rsvp"]}
+      },
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('status is 200', function () { pm.response.to.have.status(200); });"]}}]
+    },
+    {
+      "name": "Delete Event",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "auth": {"type": "bearer", "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]},
+        "url": {"raw": "{{baseUrl}}/api/events/{{eventId}}", "host": ["{{baseUrl}}"], "path": ["api", "events", "{{eventId}}"]}
+      },
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('status is 200', function () { pm.response.to.have.status(200); });"]}}]
     }
   ]
 }

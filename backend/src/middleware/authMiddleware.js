@@ -8,6 +8,7 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import getJwtSecret from '../config/jwt.js';
+import { isDbConnected } from '../config/db.js';
 
 /**
  * Middleware to check if user is authenticated
@@ -28,6 +29,13 @@ const authMiddleware = async (req, res, next) => {
 
     // Verify token
     const decoded = jwt.verify(token, getJwtSecret());
+
+    if (!isDbConnected()) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database is unavailable. Please try again shortly.',
+      });
+    }
 
     // Find user by ID
     const user = await User.findById(decoded.id);

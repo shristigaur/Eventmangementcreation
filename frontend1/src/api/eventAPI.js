@@ -14,7 +14,9 @@ const eventAPI = {
 
   // Create a new event
   createEvent: (eventData) => {
-    return axiosInstance.post('/events', eventData);
+    return axiosInstance.post('/events', eventData, {
+      meta: { retry: true, maxRetries: 2, retryDelayMs: 1200 },
+    });
   },
 
   // Update event (PUT - full update)
@@ -34,12 +36,16 @@ const eventAPI = {
 
   // Get user's created events
   getUserEvents: (userId) => {
-    return axiosInstance.get(`/users/${userId}/events`);
+    return axiosInstance.get(`/users/${userId}/events`, {
+      meta: { retry: true, maxRetries: 2, retryDelayMs: 1200 },
+    });
   },
 
   // Get user's joined/RSVP'd events
   getUserJoinedEvents: (userId) => {
-    return axiosInstance.get(`/users/${userId}/joined-events`);
+    return axiosInstance.get(`/users/${userId}/joined-events`, {
+      meta: { retry: true, maxRetries: 2, retryDelayMs: 1200 },
+    });
   },
 
   // Search events

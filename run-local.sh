@@ -22,17 +22,10 @@ if [ -f package.json ]; then
   echo "Installing frontend deps (if needed)..."
   npm install --silent || true
 fi
-# If backend wrote the chosen port, read it and export to Vite env
-BACKEND_PORT_FILE="$ROOT_DIR/backend/.backend_port"
-if [ -f "$BACKEND_PORT_FILE" ]; then
-  BACKEND_PORT=$(cat "$BACKEND_PORT_FILE" | tr -d '\n' || true)
-  if [ -n "$BACKEND_PORT" ]; then
-    export VITE_BACKEND_URL="http://localhost:${BACKEND_PORT}"
-    echo "Starting frontend with VITE_BACKEND_URL=$VITE_BACKEND_URL"
-  fi
-fi
+export VITE_API_URL="http://localhost:5000"
+echo "Starting frontend with VITE_API_URL=$VITE_API_URL"
 
-nohup env VITE_BACKEND_URL="$VITE_BACKEND_URL" npm run dev > "$ROOT_DIR/frontend.log" 2>&1 &
+nohup env VITE_API_URL="$VITE_API_URL" npm run dev > "$ROOT_DIR/frontend.log" 2>&1 &
 FRONTEND_PID=$!
 sleep 1
 

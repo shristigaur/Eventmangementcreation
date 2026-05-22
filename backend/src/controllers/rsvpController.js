@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import Event from '../models/Event.js';
 import RSVP from '../models/RSVP.js';
+import { isDbConnected } from '../config/db.js';
 
 /**
  * Validate MongoDB ObjectId
@@ -55,6 +56,13 @@ const syncAttendeeCount = async (
  */
 const upsertRsvp = async (req, res, next) => {
   try {
+    if (!isDbConnected()) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database is unavailable. Please try again shortly.',
+      });
+    }
+
     const { id: eventId } = req.params;
 
     const {
@@ -211,6 +219,13 @@ export const removeRsvp = async (
   next
 ) => {
   try {
+    if (!isDbConnected()) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database is unavailable. Please try again shortly.',
+      });
+    }
+
     const { id: eventId } = req.params;
 
     if (!isValidObjectId(eventId)) {
@@ -261,6 +276,13 @@ export const getEventRsvps = async (
   next
 ) => {
   try {
+    if (!isDbConnected()) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database is unavailable. Please try again shortly.',
+      });
+    }
+
     const { id: eventId } = req.params;
     const { status } = req.query;
 
@@ -318,6 +340,13 @@ export const getUserRsvps = async (
   next
 ) => {
   try {
+    if (!isDbConnected()) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database is unavailable. Please try again shortly.',
+      });
+    }
+
     const { userId } = req.params;
 
     if (!isValidObjectId(userId)) {
@@ -352,6 +381,13 @@ export const getRsvpStatus = async (
   next
 ) => {
   try {
+    if (!isDbConnected()) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database is unavailable. Please try again shortly.',
+      });
+    }
+
     const { id: eventId } = req.params;
 
     if (!isValidObjectId(eventId)) {
@@ -391,6 +427,13 @@ export const getRsvpStats = async (
   next
 ) => {
   try {
+    if (!isDbConnected()) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database is unavailable. Please try again shortly.',
+      });
+    }
+
     const { id: eventId } = req.params;
 
     if (!isValidObjectId(eventId)) {

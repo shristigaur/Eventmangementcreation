@@ -7,3 +7,9 @@
 
   ➜  Local:   http://localhost:5173/
   ➜  Network: use --host to expose
+6:27:59 PM [vite] .env.local changed, restarting server...
+6:27:59 PM [vite] server restarted.
+6:53:59 PM [vite] .env.local changed, restarting server...
+6:53:59 PM [vite] server restarted.
+7:03:26 PM [vite] .env.local changed, restarting server...
+7:03:26 PM [vite] server restarted.

@@ -129,6 +129,13 @@ export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
+    if (!isDbConnected()) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database is unavailable. Please try again shortly.',
+      });
+    }
+
     // Validate input
     if (!email || !password) {
       return res.status(400).json({

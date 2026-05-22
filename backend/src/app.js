@@ -20,15 +20,44 @@ const app = express();
 
 const allowedOrigins = [
   process.env.FRONTEND_URL,
-  'https://event-creation-two.vercel.app',
+  ...(process.env.CORS_ORIGINS || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean),
   'http://localhost:5173',
   'http://localhost:5174',
   'http://127.0.0.1:5173',
 ].filter(Boolean);
 
+const isAllowedOrigin = (origin) => {
+  if (!origin) {
+    return true;
+  }
+
+  if (allowedOrigins.includes(origin)) {
+    return true;
+  }
+
+  if (/^https:\/\/[a-z0-9-]+\.vercel\.app$/i.test(origin)) {
+    return true;
+  }
+
+  if (/^https:\/\/[a-z0-9-]+\.vercel\.app\/.*$/i.test(origin)) {
+    return true;
+  }
+
+  return false;
+};
+
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      if (isAllowedOrigin(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error(`CORS blocked origin: ${origin}`));
+    },
     credentials: true,
 
     methods: [
@@ -50,15 +79,10 @@ app.use(
    BODY PARSER MIDDLEWARE
 ====================================================== */
 
-app.use(
-  express.json({
-    limit: '10mb',
-  })
-);
+app.use(express.json());
 
 app.use(
   express.urlencoded({
-    limit: '10mb',
     extended: true,
   })
 );

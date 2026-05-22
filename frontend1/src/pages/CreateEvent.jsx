@@ -4,6 +4,7 @@ import { eventAPI } from "../api/index.js";
 import logger from "../utils/logger.js";
 import ModernFooter from "../modern/ModernFooter";
 import { getHealthUrl } from "../utils/backendUrl.js";
+import { getApiErrorMessage } from "../utils/apiError.js";
 
 const healthUrl = getHealthUrl();
 
@@ -78,7 +79,7 @@ export default function CreateEvent() {
         });
       } catch (err) {
         logger.apiError("GET", `/events/${editId}`, err);
-        setSubmitError(err.response?.data?.message || "Failed to load event for editing");
+        setSubmitError(getApiErrorMessage(err, "Failed to load event for editing"));
       } finally {
         setIsFetchingEvent(false);
       }
@@ -143,7 +144,7 @@ export default function CreateEvent() {
       } catch (err) {
         logger.apiError(isEditMode ? "PUT" : "POST", isEditMode ? `/events/${editId}` : "/events", err);
         setIsLoading(false);
-        setSubmitError(err.response?.data?.message || err.message || `Failed to ${isEditMode ? "update" : "create"} event`);
+        setSubmitError(getApiErrorMessage(err, `Failed to ${isEditMode ? "update" : "create"} event`));
         setErrors({});
       }
     } else {

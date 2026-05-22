@@ -4,12 +4,16 @@ import axiosInstance from './axios.js';
 const authAPI = {
   // Register a new user
   register: (userData) => {
-    return axiosInstance.post('/auth/register', userData);
+    return axiosInstance.post('/auth/register', userData, {
+      meta: { retry: true, maxRetries: 2, retryDelayMs: 1200 },
+    });
   },
 
   // Login user
   login: (credentials) => {
-    return axiosInstance.post('/auth/login', credentials);
+    return axiosInstance.post('/auth/login', credentials, {
+      meta: { retry: true, maxRetries: 2, retryDelayMs: 1200 },
+    });
   },
 
   // Get current user info

@@ -1,6 +1,8 @@
 import React, { createContext, useState, useEffect } from 'react';
 import authAPI from '../api/authAPI.js';
 import logger from '../utils/logger.js';
+import { getApiErrorMessage } from '../utils/apiError.js';
+import { getStoredUserPayload } from '../utils/tokenStorage.js';
 
 // Create Auth Context
 export const AuthContext = createContext();
@@ -15,21 +17,22 @@ export const AuthProvider = ({ children }) => {
   // Check if user is logged in on app load
   useEffect(() => {
     logger.lifecycle("AuthProvider", "INIT");
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        const userData = JSON.parse(storedUser);
-        setUser(userData.user || userData);
-        setToken(userData.token);
-        logger.auth("AUTO_LOGIN", { userId: userData.user?._id || userData._id });
-      } catch (err) {
-        logger.auth("AUTO_LOGIN_FAILED", { error: err.message });
-        localStorage.removeItem('user');
-      }
+    const storedUserData = getStoredUserPayload();
+    let hydratedToken = null;
+
+    if (storedUserData) {
+      setUser(storedUserData.user || storedUserData);
+      hydratedToken = storedUserData.token || storedUserData.user?.token || null;
+      setToken(hydratedToken);
+      logger.auth("AUTO_LOGIN", { userId: storedUserData.user?._id || storedUserData._id });
     } else {
       logger.auth("NO_STORED_USER", {});
     }
     setIsLoading(false);
+
+    if (hydratedToken) {
+      void getCurrentUser();
+    }
   }, []);
 
   // Login function
@@ -52,11 +55,12 @@ export const AuthProvider = ({ children }) => {
         'user',
         JSON.stringify({ user: userData, token: newToken })
       );
+      localStorage.removeItem('authUser');
       logger.auth("LOGIN_SUCCESS", { userId: userData._id, email });
 
       return { success: true, user: userData };
     } catch (err) {
-      const errorMsg = err.response?.data?.message || (err.code === 'ERR_NETWORK' ? 'Backend is offline. Start the API server and try again.' : 'Login failed');
+      const errorMsg = getApiErrorMessage(err, 'Login failed');
       setError(errorMsg);
       logger.auth("LOGIN_ERROR", { error: errorMsg, status: err.response?.status });
       return { success: false, error: errorMsg };
@@ -90,11 +94,12 @@ export const AuthProvider = ({ children }) => {
         'user',
         JSON.stringify({ user: newUser, token: newToken })
       );
+      localStorage.removeItem('authUser');
       logger.auth("REGISTER_SUCCESS", { userId: newUser._id, email: payload.email });
 
       return { success: true, user: newUser };
     } catch (err) {
-      const errorMsg = err.response?.data?.message || (err.code === 'ERR_NETWORK' ? 'Backend is offline. Start the API server and try again.' : 'Registration failed');
+      const errorMsg = getApiErrorMessage(err, 'Registration failed');
       setError(errorMsg);
       logger.auth("REGISTER_ERROR", { error: errorMsg, status: err.response?.status });
       return { success: false, error: errorMsg };
@@ -110,6 +115,7 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     setError(null);
     localStorage.removeItem('user');
+    localStorage.removeItem('authUser');
     logger.auth("LOGOUT_SUCCESS", {});
   };
 

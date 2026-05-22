@@ -100,7 +100,7 @@ npm run lint      # Run ESLint
 - Frontend environment: `.env` in the frontend folder
 - Default API base URL: `http://localhost:5000/api`
 - Port 5174: Frontend development server
-- Port 5001: Backend API (expected)
+- Port 5000: Backend API (expected)
 
 ## 📞 Support
 
