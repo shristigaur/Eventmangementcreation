@@ -11,6 +11,9 @@ const DEFAULT_IMAGE =
 const isValidObjectId = (id) =>
   mongoose.Types.ObjectId.isValid(id);
 
+const trimIfString = (value) =>
+  typeof value === 'string' ? value.trim() : value;
+
 /**
  * Get database attendee counts
  */
@@ -229,10 +232,40 @@ export const updateEvent = async (req, res, next) => {
       });
     }
 
+    const updateData = {};
+
+    if (req.body.title !== undefined) {
+      updateData.title = trimIfString(req.body.title);
+    }
+
+    if (req.body.description !== undefined) {
+      updateData.description = trimIfString(req.body.description);
+    }
+
+    if (req.body.date !== undefined) {
+      updateData.date = req.body.date;
+    }
+
+    if (req.body.time !== undefined) {
+      updateData.time = trimIfString(req.body.time);
+    }
+
+    if (req.body.location !== undefined) {
+      updateData.location = trimIfString(req.body.location);
+    }
+
+    if (req.body.category !== undefined) {
+      updateData.category = trimIfString(req.body.category);
+    }
+
+    if (req.body.image !== undefined) {
+      updateData.image = trimIfString(req.body.image);
+    }
+
     const updatedEvent =
       await Event.findByIdAndUpdate(
         id,
-        req.body,
+        updateData,
         {
           new: true,
           runValidators: true,
