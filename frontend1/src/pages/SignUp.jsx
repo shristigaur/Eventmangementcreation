@@ -76,11 +76,6 @@ export default function SignUp() {
   const handleSignUp = async (e) => {
     e.preventDefault();
     logger.userAction("SIGNUP_ATTEMPT", { email: formData.email });
-
-    if (backendStatus === "offline") {
-      setSignupError("Backend is offline. Start the API server on port 5001 and try again.");
-      return;
-    }
     
     setSignupError("");
     const newErrors = validateForm();
@@ -236,10 +231,10 @@ export default function SignUp() {
 
             <button
               type="submit"
-              disabled={isLoading || backendStatus !== "online"}
+              disabled={isLoading}
               className="w-full bg-linear-to-r from-emerald-600 to-emerald-700 text-white font-semibold py-3 rounded-xl shadow-lg shadow-emerald-200 hover:shadow-emerald-300 hover:-translate-y-0.5 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
             >
-              {backendStatus === "offline" ? "API Offline" : isLoading ? "Creating Account..." : "Create Account"}
+              {isLoading ? "Creating Account..." : "Create Account"}
             </button>
           </form>
 

@@ -116,11 +116,6 @@ export default function CreateEvent() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     logger.userAction("CREATE_EVENT", { title: formData.title });
-
-    if (backendStatus === "offline") {
-      setSubmitError("Backend is offline. Start the API server on port 5001 and try again.");
-      return;
-    }
     
     setSubmitError("");
     const newErrors = validateForm();
@@ -327,7 +322,7 @@ export default function CreateEvent() {
                     : (isEditMode ? "Save Changes" : "Create Event")}
               </button>
               <Link
-                to={isEditMode ? "/my-events" : "/home"}
+                disabled={isLoading}
                 className="flex-1 bg-slate-100 text-slate-900 font-semibold py-4 rounded-xl hover:bg-slate-200 transition duration-300 text-center text-lg"
               >
                 Cancel
