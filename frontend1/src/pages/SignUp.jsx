@@ -1,7 +1,42 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import logger from "../utils/logger.js";
+
+const backendBaseUrl = (import.meta.env.VITE_BACKEND_URL || "http://localhost:5001").trim().replace(/\/+$/, "");
+const healthUrl = backendBaseUrl.endsWith("/api")
+  ? `${backendBaseUrl.slice(0, -4)}/health`
+  : `${backendBaseUrl}/health`;
+
+const useBackendHealth = () => {
+  const [backendStatus, setBackendStatus] = useState("checking");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const checkBackend = async () => {
+      try {
+        const response = await fetch(healthUrl, { cache: "no-store" });
+        if (!isMounted) return;
+        setBackendStatus(response.ok ? "online" : "offline");
+      } catch {
+        if (!isMounted) return;
+        setBackendStatus("offline");
+      }
+    };
+
+    void checkBackend();
+
+    const timerId = window.setInterval(checkBackend, 30000);
+
+    return () => {
+      isMounted = false;
+      window.clearInterval(timerId);
+    };
+  }, []);
+
+  return backendStatus;
+};
 
 export default function SignUp() {
   const [formData, setFormData] = useState({
@@ -17,6 +52,7 @@ export default function SignUp() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
   const { register } = useAuth();
+  const backendStatus = useBackendHealth();
 
   const validateForm = () => {
     const newErrors = {};
@@ -42,6 +78,11 @@ export default function SignUp() {
   const handleSignUp = async (e) => {
     e.preventDefault();
     logger.userAction("SIGNUP_ATTEMPT", { email: formData.email });
+
+    if (backendStatus === "offline") {
+      setSignupError("Backend is offline. Start the API server on port 5001 and try again.");
+      return;
+    }
     
     setSignupError("");
     const newErrors = validateForm();
@@ -83,6 +124,16 @@ export default function SignUp() {
           <div className="mb-8">
             <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-2">Create Account</h1>
             <p className="text-slate-600">Join Eventify and discover amazing events</p>
+              {backendStatus === "checking" && (
+                <p className="mt-3 inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                  Checking API connection...
+                </p>
+              )}
+              {backendStatus === "offline" && (
+                <p className="mt-3 inline-flex rounded-full bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700">
+                  Backend offline - registration is temporarily unavailable
+                </p>
+              )}
           </div>
 
           <form onSubmit={handleSignUp} className="space-y-5">
@@ -187,10 +238,10 @@ export default function SignUp() {
 
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || backendStatus !== "online"}
               className="w-full bg-linear-to-r from-emerald-600 to-emerald-700 text-white font-semibold py-3 rounded-xl shadow-lg shadow-emerald-200 hover:shadow-emerald-300 hover:-translate-y-0.5 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
             >
-              {isLoading ? "Creating Account..." : "Create Account"}
+              {backendStatus === "offline" ? "API Offline" : isLoading ? "Creating Account..." : "Create Account"}
             </button>
           </form>
 

@@ -34,11 +34,12 @@ export const AuthProvider = ({ children }) => {
 
   // Login function
   const login = async (email, password) => {
-    logger.auth("LOGIN_START", { email });
+    const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : email;
+    logger.auth("LOGIN_START", { email: normalizedEmail });
     setIsLoading(true);
     setError(null);
     try {
-      const response = await authAPI.login({ email, password });
+      const response = await authAPI.login({ email: normalizedEmail, password });
       const { user: userData, token: newToken } = response.data;
 
       // Store in state
@@ -55,7 +56,7 @@ export const AuthProvider = ({ children }) => {
 
       return { success: true, user: userData };
     } catch (err) {
-      const errorMsg = err.response?.data?.message || 'Login failed';
+      const errorMsg = err.response?.data?.message || (err.code === 'ERR_NETWORK' ? 'Backend is offline. Start the API server and try again.' : 'Login failed');
       setError(errorMsg);
       logger.auth("LOGIN_ERROR", { error: errorMsg, status: err.response?.status });
       return { success: false, error: errorMsg };
@@ -66,11 +67,17 @@ export const AuthProvider = ({ children }) => {
 
   // Register function
   const register = async (userData) => {
-    logger.auth("REGISTER_START", { email: userData.email });
+    const payload = {
+      ...userData,
+      name: typeof userData.name === 'string' ? userData.name.trim() : userData.name,
+      email: typeof userData.email === 'string' ? userData.email.trim().toLowerCase() : userData.email,
+    };
+
+    logger.auth("REGISTER_START", { email: payload.email });
     setIsLoading(true);
     setError(null);
     try {
-      const response = await authAPI.register(userData);
+      const response = await authAPI.register(payload);
       const { user: newUser, token: newToken } = response.data;
 
       // Store in state
@@ -83,11 +90,11 @@ export const AuthProvider = ({ children }) => {
         'user',
         JSON.stringify({ user: newUser, token: newToken })
       );
-      logger.auth("REGISTER_SUCCESS", { userId: newUser._id, email: userData.email });
+      logger.auth("REGISTER_SUCCESS", { userId: newUser._id, email: payload.email });
 
       return { success: true, user: newUser };
     } catch (err) {
-      const errorMsg = err.response?.data?.message || 'Registration failed';
+      const errorMsg = err.response?.data?.message || (err.code === 'ERR_NETWORK' ? 'Backend is offline. Start the API server and try again.' : 'Registration failed');
       setError(errorMsg);
       logger.auth("REGISTER_ERROR", { error: errorMsg, status: err.response?.status });
       return { success: false, error: errorMsg };

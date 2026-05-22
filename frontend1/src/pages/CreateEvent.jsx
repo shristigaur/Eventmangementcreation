@@ -4,6 +4,43 @@ import { eventAPI } from "../api/index.js";
 import logger from "../utils/logger.js";
 import ModernFooter from "../modern/ModernFooter";
 
+const backendBaseUrl = (import.meta.env.VITE_BACKEND_URL || "http://localhost:5001").trim().replace(/\/+$/, "");
+const healthUrl = backendBaseUrl.endsWith("/api")
+  ? `${backendBaseUrl.slice(0, -4)}/health`
+  : `${backendBaseUrl}/health`;
+
+const useBackendHealth = () => {
+  const [backendStatus, setBackendStatus] = useState("checking");
+
+  useEffect(() => {
+    let isMounted = true;
+    let timeoutId;
+
+    const checkBackend = async () => {
+      try {
+        const response = await fetch(healthUrl, { cache: "no-store" });
+        if (!isMounted) return;
+
+        setBackendStatus(response.ok ? "online" : "offline");
+      } catch {
+        if (!isMounted) return;
+        setBackendStatus("offline");
+      }
+    };
+
+    void checkBackend();
+
+    timeoutId = window.setInterval(checkBackend, 30000);
+
+    return () => {
+      isMounted = false;
+      window.clearInterval(timeoutId);
+    };
+  }, []);
+
+  return backendStatus;
+};
+
 export default function CreateEvent() {
   const { id: editId } = useParams();
   const isEditMode = Boolean(editId);
@@ -21,6 +58,7 @@ export default function CreateEvent() {
   const [isFetchingEvent, setIsFetchingEvent] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const navigate = useNavigate();
+  const backendStatus = useBackendHealth();
 
   useEffect(() => {
     if (!isEditMode) return;
@@ -30,7 +68,7 @@ export default function CreateEvent() {
       setSubmitError("");
       try {
         const response = await eventAPI.getEventById(editId);
-        const event = response.data;
+        const event = response.data?.data || response.data || {};
         setFormData({
           title: event.title || "",
           description: event.description || "",
@@ -80,6 +118,11 @@ export default function CreateEvent() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     logger.userAction("CREATE_EVENT", { title: formData.title });
+
+    if (backendStatus === "offline") {
+      setSubmitError("Backend is offline. Start the API server on port 5001 and try again.");
+      return;
+    }
     
     setSubmitError("");
     const newErrors = validateForm();
@@ -99,14 +142,15 @@ export default function CreateEvent() {
         const response = isEditMode
           ? await eventAPI.updateEvent(editId, eventPayload)
           : await eventAPI.createEvent(eventPayload);
-        
-        logger.data(isEditMode ? "UPDATE_SUCCESS" : "CREATE_SUCCESS", "Event", { eventId: response.data._id });
+
+        const savedEvent = response.data?.data || response.data || {};
+        logger.data(isEditMode ? "UPDATE_SUCCESS" : "CREATE_SUCCESS", "Event", { eventId: savedEvent._id || savedEvent.id });
         setIsLoading(false);
         navigate("/my-events");
       } catch (err) {
         logger.apiError(isEditMode ? "PUT" : "POST", isEditMode ? `/events/${editId}` : "/events", err);
         setIsLoading(false);
-        setSubmitError(err.response?.data?.message || `Failed to ${isEditMode ? "update" : "create"} event`);
+        setSubmitError(err.response?.data?.message || err.message || `Failed to ${isEditMode ? "update" : "create"} event`);
         setErrors({});
       }
     } else {
@@ -133,6 +177,16 @@ export default function CreateEvent() {
             <p className="text-slate-600 text-lg">
               {isEditMode ? "Update your event details and keep guests informed" : "Share your creative vision with the world"}
             </p>
+            {backendStatus === "checking" && (
+              <p className="mt-3 inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                Checking API connection...
+              </p>
+            )}
+            {backendStatus === "offline" && (
+              <p className="mt-3 inline-flex rounded-full bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700">
+                Backend offline - cannot save until the API is running
+              </p>
+            )}
           </div>
 
           {isFetchingEvent ? (
@@ -265,10 +319,14 @@ export default function CreateEvent() {
             <div className="flex gap-4 pt-6">
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || backendStatus === "offline" || backendStatus === "checking"}
                 className="flex-1 bg-linear-to-r from-emerald-600 to-emerald-700 text-white font-semibold py-4 rounded-xl shadow-lg shadow-emerald-200 hover:shadow-emerald-300 hover:-translate-y-1 transition duration-300 text-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
               >
-                {isLoading ? (isEditMode ? "Saving..." : "Creating...") : (isEditMode ? "Save Changes" : "Create Event")}
+                {backendStatus === "offline"
+                  ? "API Offline"
+                  : isLoading
+                    ? (isEditMode ? "Saving..." : "Creating...")
+                    : (isEditMode ? "Save Changes" : "Create Event")}
               </button>
               <Link
                 to={isEditMode ? "/my-events" : "/home"}

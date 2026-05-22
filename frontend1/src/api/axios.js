@@ -12,8 +12,12 @@ const API_BASE_URL = normalizeBaseURL(import.meta.env.VITE_BACKEND_URL);
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
+  validateStatus: (status) => status >= 200 && status < 300,
   headers: {
     'Content-Type': 'application/json',
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    Pragma: 'no-cache',
+    Expires: '0',
   },
 });
 
@@ -40,6 +44,10 @@ axiosInstance.interceptors.request.use(
 // Add response interceptor to handle auth errors and log responses
 axiosInstance.interceptors.response.use(
   (response) => {
+    if (response.status === 304) {
+      return Promise.resolve(response);
+    }
+
     // Log successful response
     logger.apiSuccess(response.config.method, response.config.url, response.data);
     return response;

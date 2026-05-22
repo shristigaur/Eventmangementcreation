@@ -41,6 +41,9 @@ app.use(
     allowedHeaders: [
       'Content-Type',
       'Authorization',
+      'Cache-Control',
+      'Pragma',
+      'Expires',
     ],
   })
 );

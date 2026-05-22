@@ -107,31 +107,51 @@ export default function MyEvents() {
     const fetchEvents = async () => {
       if (!user?._id) {
         logger.auth("NO_USER", { message: "User not found in context" });
+        setIsLoading(false);
         return;
       }
+
       try {
         setIsLoading(true);
-        logger.data("FETCH", "Created Events", { userId: user._id });
-        // Fetch created events
-        const createdRes = await eventAPI.getUserEvents(user._id);
-        const createdList = Array.isArray(createdRes.data?.data) ? createdRes.data.data : [];
-        setCreatedEvents(createdList);
-        logger.stateUpdate("MyEvents", "createdEvents", `${createdList.length} events`);
-
-        logger.data("FETCH", "Joined Events", { userId: user._id });
-        // Fetch joined events
-        const joinedRes = await eventAPI.getUserJoinedEvents(user._id);
-        const joinedList = Array.isArray(joinedRes.data?.data) ? joinedRes.data.data : [];
-        setJoinedEvents(joinedList);
-        // initialize rsvp map for joined events
-        const map = {};
-        joinedList.forEach((ev) => {
-          map[ev._id] = null;
-        });
-        setRsvpMap(map);
-        logger.stateUpdate("MyEvents", "joinedEvents", `${joinedList.length} events`);
-
         setError("");
+
+        const [createdResult, joinedResult] = await Promise.allSettled([
+          eventAPI.getUserEvents(user._id),
+          eventAPI.getUserJoinedEvents(user._id),
+        ]);
+
+        if (createdResult.status === "fulfilled") {
+          const createdList = Array.isArray(createdResult.value.data?.data) ? createdResult.value.data.data : [];
+          setCreatedEvents(createdList);
+          logger.stateUpdate("MyEvents", "createdEvents", `${createdList.length} events`);
+        } else {
+          logger.apiError("GET", `/users/${user._id}/events`, createdResult.reason);
+          setCreatedEvents([]);
+        }
+
+        if (joinedResult.status === "fulfilled") {
+          const joinedList = Array.isArray(joinedResult.value.data?.data) ? joinedResult.value.data.data : [];
+          setJoinedEvents(joinedList);
+
+          const map = {};
+          joinedList.forEach((ev) => {
+            map[ev._id] = null;
+          });
+          setRsvpMap(map);
+          logger.stateUpdate("MyEvents", "joinedEvents", `${joinedList.length} events`);
+        } else {
+          logger.apiError("GET", `/users/${user._id}/joined-events`, joinedResult.reason);
+          setJoinedEvents([]);
+          setRsvpMap({});
+        }
+
+        if (createdResult.status === "rejected" && joinedResult.status === "rejected") {
+          setError("Failed to load your events");
+        } else if (createdResult.status === "rejected") {
+          setError("Failed to load your created events");
+        } else if (joinedResult.status === "rejected") {
+          setError("Failed to load your joined events");
+        }
       } catch (err) {
         logger.apiError("GET", `/users/${user._id}/events`, err);
         setError("Failed to load your events");

@@ -81,7 +81,7 @@ export default function PremiumHome() {
     const loadEvents = async () => {
       try {
         const response = await eventAPI.getAllEvents();
-        const remoteEvents = Array.isArray(response.data) ? response.data : [];
+        const remoteEvents = Array.isArray(response.data?.data) ? response.data.data : [];
 
         if (isMounted && remoteEvents.length > 0) {
           setEventsData(
