@@ -1,12 +1,8 @@
 import axios from 'axios';
 import logger from '../utils/logger.js';
+import { getApiBaseUrl } from '../utils/backendUrl.js';
 
-const normalizeBaseURL = (url) => {
-  const trimmedUrl = (url || 'http://localhost:5001').trim().replace(/\/+$/, '');
-  return trimmedUrl.endsWith('/api') ? trimmedUrl : `${trimmedUrl}/api`;
-};
-
-const API_BASE_URL = normalizeBaseURL(import.meta.env.VITE_BACKEND_URL);
+const API_BASE_URL = getApiBaseUrl();
 
 // Create Axios instance with base configuration
 const axiosInstance = axios.create({

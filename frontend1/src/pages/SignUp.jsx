@@ -2,11 +2,9 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import logger from "../utils/logger.js";
+import { getHealthUrl } from "../utils/backendUrl.js";
 
-const backendBaseUrl = (import.meta.env.VITE_BACKEND_URL || "http://localhost:5001").trim().replace(/\/+$/, "");
-const healthUrl = backendBaseUrl.endsWith("/api")
-  ? `${backendBaseUrl.slice(0, -4)}/health`
-  : `${backendBaseUrl}/health`;
+const healthUrl = getHealthUrl();
 
 const useBackendHealth = () => {
   const [backendStatus, setBackendStatus] = useState("checking");

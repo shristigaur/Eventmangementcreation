@@ -1,12 +1,8 @@
 import axios from "axios";
-
-const normalizeBaseURL = (url) => {
-	const trimmedUrl = (url || "http://localhost:5001").trim().replace(/\/+$/, "");
-	return trimmedUrl.endsWith("/api") ? trimmedUrl : `${trimmedUrl}/api`;
-};
+import { getApiBaseUrl } from "../utils/backendUrl.js";
 
 const adminClient = axios.create({
-	baseURL: normalizeBaseURL(import.meta.env.VITE_BACKEND_URL),
+	baseURL: getApiBaseUrl(),
 	timeout: 10000,
 	headers: {
 		"Content-Type": "application/json",

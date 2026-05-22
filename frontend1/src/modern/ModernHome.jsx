@@ -130,19 +130,19 @@ export default function ModernHome() {
 
             <div className="relative flex items-center justify-center lg:justify-end order-2" data-reveal style={{ "--reveal-delay": "120ms" }}>
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="h-72 w-72 md:h-[26rem] md:w-[26rem] rounded-full bg-emerald-100/70 blur-3xl"></div>
+                <div className="h-72 w-72 md:h-104 md:w-104 rounded-full bg-emerald-100/70 blur-3xl"></div>
               </div>
 
               <div className="relative z-10 w-full max-w-xl">
                 <div className="grid gap-4 md:grid-cols-5 items-stretch">
-                  <div className="md:col-span-3 relative rounded-[2rem] bg-white p-3 shadow-2xl shadow-emerald-100 border border-emerald-100 floaty media-card" data-reveal style={{ "--reveal-delay": "220ms" }}>
-                    <div className="overflow-hidden rounded-[1.5rem] bg-[#eefaf1] p-2">
-                      <div className="relative overflow-hidden rounded-[1.5rem] bg-white">
-                        <div className="absolute inset-0 bg-gradient-to-tr from-emerald-950/20 via-transparent to-transparent"></div>
+                  <div className="md:col-span-3 relative rounded-4xl bg-white p-3 shadow-2xl shadow-emerald-100 border border-emerald-100 floaty media-card" data-reveal style={{ "--reveal-delay": "220ms" }}>
+                    <div className="overflow-hidden rounded-3xl bg-[#eefaf1] p-2">
+                      <div className="relative overflow-hidden rounded-3xl bg-white">
+                        <div className="absolute inset-0 bg-linear-to-tr from-emerald-950/20 via-transparent to-transparent"></div>
                         <img
                           src={imageBank.hero}
                           alt="Event showcase"
-                          className="h-[16rem] sm:h-[20rem] md:h-[27rem] w-full object-cover object-center"
+                          className="h-64 sm:h-80 md:h-108 w-full object-cover object-center"
                         />
 
                         <div className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-emerald-700 shadow-sm glow-pulse">
@@ -160,7 +160,7 @@ export default function ModernHome() {
                             </div>
                           </div>
                           <div className="mt-3 h-2 rounded-full bg-emerald-100 overflow-hidden">
-                            <div className="h-full w-2/3 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-700"></div>
+                            <div className="h-full w-2/3 rounded-full bg-linear-to-r from-emerald-500 to-emerald-700"></div>
                           </div>
                         </div>
                       </div>
@@ -192,21 +192,21 @@ export default function ModernHome() {
                       </div>
 
                       <div className="mt-4 grid grid-cols-3 gap-3">
-                        <div className="overflow-hidden rounded-[1rem] border border-emerald-100 bg-white" data-reveal style={{ "--reveal-delay": "560ms" }}>
+                        <div className="overflow-hidden rounded-2xl border border-emerald-100 bg-white" data-reveal style={{ "--reveal-delay": "560ms" }}>
                           <img
                             src={imageBank.event}
                             alt="Expo hall"
                             className="h-28 md:h-32 w-full object-cover object-center"
                           />
                         </div>
-                        <div className="overflow-hidden rounded-[1rem] border border-emerald-100 bg-white" data-reveal style={{ "--reveal-delay": "660ms" }}>
+                        <div className="overflow-hidden rounded-2xl border border-emerald-100 bg-white" data-reveal style={{ "--reveal-delay": "660ms" }}>
                           <img
                             src={imageBank.art}
                             alt="Talk stage"
                             className="h-28 md:h-32 w-full object-cover object-center"
                           />
                         </div>
-                        <div className="overflow-hidden rounded-[1rem] border border-emerald-100 bg-white" data-reveal style={{ "--reveal-delay": "760ms" }}>
+                        <div className="overflow-hidden rounded-2xl border border-emerald-100 bg-white" data-reveal style={{ "--reveal-delay": "760ms" }}>
                           <img
                             src={imageBank.festival}
                             alt="Event crowd"
@@ -263,7 +263,7 @@ export default function ModernHome() {
               </div>
             </div>
 
-            <div className="lg:col-span-2 mt-2 md:mt-4 rounded-[2rem] bg-white/90 p-3 md:p-4 border border-emerald-100 shadow-xl shadow-emerald-100" data-reveal style={{ "--reveal-delay": "700ms" }}>
+            <div className="lg:col-span-2 mt-2 md:mt-4 rounded-4xl bg-white/90 p-3 md:p-4 border border-emerald-100 shadow-xl shadow-emerald-100" data-reveal style={{ "--reveal-delay": "700ms" }}>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="group relative overflow-hidden rounded-[1.25rem] border border-emerald-100 bg-white">
                   <img src={imageBank.crowd} alt="Event crowd highlight" className="h-36 md:h-40 w-full object-cover object-center transition duration-500 group-hover:scale-105" />
@@ -283,7 +283,7 @@ export default function ModernHome() {
         </section>
 
         <section className="max-w-7xl mx-auto px-6 pb-8 md:pb-10 -mt-1 md:-mt-2" data-reveal style={{ "--reveal-delay": "120ms" }}>
-          <div className="rounded-[2rem] bg-white/95 p-5 md:p-6 shadow-xl shadow-emerald-100 border border-emerald-100" data-reveal style={{ "--reveal-delay": "120ms" }}>
+          <div className="rounded-4xl bg-white/95 p-5 md:p-6 shadow-xl shadow-emerald-100 border border-emerald-100" data-reveal style={{ "--reveal-delay": "120ms" }}>
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
                 <p className="text-sm font-medium uppercase tracking-[0.2em] text-emerald-600" data-reveal style={{ "--reveal-delay": "200ms" }}>Search and filter</p>
@@ -315,15 +315,15 @@ export default function ModernHome() {
 
         <section className="max-w-7xl mx-auto px-6 pb-16">
           <div className="mb-8 grid gap-4 sm:grid-cols-3">
-            <div className="rounded-[1.5rem] border border-emerald-100 bg-white p-3 shadow-lg shadow-emerald-100" data-reveal style={{ "--reveal-delay": "80ms" }}>
+            <div className="rounded-3xl border border-emerald-100 bg-white p-3 shadow-lg shadow-emerald-100" data-reveal style={{ "--reveal-delay": "80ms" }}>
               <img src={imageBank.business} alt="Business events" className="h-32 w-full rounded-xl object-cover" />
               <p className="mt-3 text-sm font-semibold text-slate-900">Business</p>
             </div>
-            <div className="rounded-[1.5rem] border border-emerald-100 bg-white p-3 shadow-lg shadow-emerald-100" data-reveal style={{ "--reveal-delay": "180ms" }}>
+            <div className="rounded-3xl border border-emerald-100 bg-white p-3 shadow-lg shadow-emerald-100" data-reveal style={{ "--reveal-delay": "180ms" }}>
               <img src={imageBank.festival} alt="Festival events" className="h-32 w-full rounded-xl object-cover" />
               <p className="mt-3 text-sm font-semibold text-slate-900">Festival</p>
             </div>
-            <div className="rounded-[1.5rem] border border-emerald-100 bg-white p-3 shadow-lg shadow-emerald-100" data-reveal style={{ "--reveal-delay": "280ms" }}>
+            <div className="rounded-3xl border border-emerald-100 bg-white p-3 shadow-lg shadow-emerald-100" data-reveal style={{ "--reveal-delay": "280ms" }}>
               <img src={imageBank.art} alt="Art events" className="h-32 w-full rounded-xl object-cover" />
               <p className="mt-3 text-sm font-semibold text-slate-900">Art</p>
             </div>

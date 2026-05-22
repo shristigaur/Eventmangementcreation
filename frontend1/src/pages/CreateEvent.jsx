@@ -3,11 +3,9 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { eventAPI } from "../api/index.js";
 import logger from "../utils/logger.js";
 import ModernFooter from "../modern/ModernFooter";
+import { getHealthUrl } from "../utils/backendUrl.js";
 
-const backendBaseUrl = (import.meta.env.VITE_BACKEND_URL || "http://localhost:5001").trim().replace(/\/+$/, "");
-const healthUrl = backendBaseUrl.endsWith("/api")
-  ? `${backendBaseUrl.slice(0, -4)}/health`
-  : `${backendBaseUrl}/health`;
+const healthUrl = getHealthUrl();
 
 const useBackendHealth = () => {
   const [backendStatus, setBackendStatus] = useState("checking");
