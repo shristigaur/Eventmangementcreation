@@ -27,9 +27,9 @@ const startServer = async () => {
     // If DB connection failed, log a warning but continue running so health
     // endpoints remain available (useful for platform health checks).
     if (!dbConn) {
-      console.warn('⚠️ MongoDB connection failed; server will continue running without DB.');
-    }
-
+         console.error('❌ MongoDB connection failed. Stopping server.');
+          process.exit(1);
+      }
     const listenPort = Number(PORT);
     const server = app.listen(listenPort);
 
@@ -39,7 +39,7 @@ const startServer = async () => {
 ║   🚀 Event Management Backend              ║
 ║   Environment: ${NODE_ENV === 'development' ? 'Development ' : 'Production'}          ║
 ║   Server running on port: ${String(listenPort).padEnd(21)} ║
-║   API: http://localhost:${String(listenPort).padEnd(21)} ║
+║   API: ${process.env.RENDER_EXTERNAL_URL || `http://localhost:${listenPort}`}
 ╚════════════════════════════════════════════╝
       `);
 

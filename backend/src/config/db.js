@@ -78,7 +78,7 @@ const connectDB = async () => {
       '⚠️ Server will continue running without database connection'
     );
 
-    return null;
+    process.exit(1);
 
     // If you want server to stop on DB failure, use:
     // process.exit(1);
