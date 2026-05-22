@@ -14,24 +14,13 @@ import errorMiddleware from './middleware/errorMiddleware.js';
 
 const app = express();
 
-const normalizeOrigin = (value) => {
-  if (!value) {
-    return null;
-  }
-
-  if (/^https?:\/\//i.test(value)) {
-    return value.replace(/\/$/, '');
-  }
-
-  return `https://${value.replace(/\/$/, '')}`;
-};
-
 /* ======================================================
    CORS CONFIGURATION
 ====================================================== */
 
 const allowedOrigins = [
-  normalizeOrigin(process.env.FRONTEND_URL),
+  process.env.FRONTEND_URL,
+  'https://event-creation-two.vercel.app',
   'http://localhost:5173',
   'http://localhost:5174',
   'http://127.0.0.1:5173',
@@ -53,9 +42,6 @@ app.use(
     allowedHeaders: [
       'Content-Type',
       'Authorization',
-      'Cache-Control',
-      'Pragma',
-      'Expires',
     ],
   })
 );
