@@ -22,18 +22,64 @@ const startServer = async () => {
     ]);
 
     // Connect to MongoDB
-    await connectDB();
+    const dbConn = await connectDB();
 
-    // Start listening on port
-    const server = app.listen(PORT);
+    // If DB connection failed, log a warning but continue running so health
+    // endpoints remain available (useful for platform health checks).
+    if (!dbConn) {
+      console.warn('⚠️ MongoDB connection failed; server will continue running without DB.');
+    }
+
+    // Start listening on port with retry on EADDRINUSE
+    let server = null;
+    const maxAttempts = 5;
+    let attempt = 0;
+    let listenPort = Number(PORT);
+
+    while (attempt < maxAttempts) {
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        server = await new Promise((resolve, reject) => {
+          const s = app.listen(listenPort);
+          s.once('listening', () => resolve(s));
+          s.once('error', (err) => reject(err));
+        });
+        break;
+      } catch (err) {
+        if (err && err.code === 'EADDRINUSE') {
+          console.warn(`Port ${listenPort} is in use, trying next port...`);
+          listenPort += 1;
+          attempt += 1;
+          // small delay before retrying
+          // eslint-disable-next-line no-await-in-loop
+          await new Promise((r) => setTimeout(r, 200));
+          continue;
+        }
+
+        // Unknown error - rethrow
+        throw err;
+      }
+    }
+
+    if (!server) {
+      throw new Error(`Failed to bind to a port after ${maxAttempts} attempts`);
+    }
 
     server.on('listening', () => {
+      try {
+        // Write the chosen listen port to a file for local tooling
+        const portFile = new URL('../.backend_port', import.meta.url).pathname;
+        // Use a non-blocking write
+        import('fs').then(({ promises: fs }) => fs.writeFile(portFile, String(listenPort), 'utf8').catch(() => {}));
+      } catch (e) {
+        // ignore
+      }
       console.log(`
 ╔════════════════════════════════════════════╗
 ║   🚀 Event Management Backend              ║
 ║   Environment: ${NODE_ENV === 'development' ? 'Development ' : 'Production'}          ║
-║   Server running on port: ${PORT.toString().padEnd(21)} ║
-║   API: http://localhost:${PORT.toString().padEnd(21)} ║
+║   Server running on port: ${String(listenPort).padEnd(21)} ║
+║   API: http://localhost:${String(listenPort).padEnd(21)} ║
 ╚════════════════════════════════════════════╝
       `);
 
@@ -58,13 +104,13 @@ const startServer = async () => {
       console.error('❌ Failed to start HTTP server:', {
         code: error.code,
         message: error.message,
-        port: PORT,
+        port: listenPort,
         stack: error.stack,
       });
 
       if (error.code === 'EADDRINUSE') {
         console.error(
-          `Port ${PORT} is already in use. Stop the other server or set PORT to a free port.`
+          `Port ${listenPort} is already in use. Stop the other server or set PORT to a free port.`
         );
       }
 

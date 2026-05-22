@@ -1,0 +1,40 @@
+
+> event-management-backend@1.0.0 dev
+> nodemon src/server.js
+
+[33m[nodemon] 3.1.14[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: js,mjs,cjs,json[39m
+[32m[nodemon] starting `node src/server.js`[39m
+🗄️ MongoDB status before connect: disconnected
+✅ MongoDB Connected: ac-8khkaog-shard-00-01.ricy8ea.mongodb.net
+🗄️ MongoDB status after connect: connected
+Port 5001 is in use, trying next port...
+Port 5002 is in use, trying next port...
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+🗄️ MongoDB status before connect: disconnected
+✅ MongoDB Connected: ac-8khkaog-shard-00-00.ricy8ea.mongodb.net
+🗄️ MongoDB status after connect: connected
+📡 GET /health
+[0mGET /health [32m200[0m 5.510 ms - 104[0m
+📡 GET /health
+[0mGET /health [32m200[0m 0.701 ms - 104[0m
+📡 GET /health
+[0mGET /health [32m200[0m 0.658 ms - 104[0m
+📡 GET /health
+[0mGET /health [32m200[0m 0.515 ms - 104[0m
+📡 GET /health
+[0mGET /health [32m200[0m 0.499 ms - 104[0m
+📡 GET /health
+[0mGET /health [32m200[0m 0.685 ms - 104[0m
+📡 GET /health
+[0mGET /health [32m200[0m 0.816 ms - 104[0m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+🗄️ MongoDB status before connect: disconnected
+✅ MongoDB Connected: ac-8khkaog-shard-00-01.ricy8ea.mongodb.net
+🗄️ MongoDB status after connect: connected
+📡 GET /health
+[0mGET /health [32m200[0m 4.583 ms - 104[0m
