@@ -9,6 +9,7 @@ import morgan from 'morgan';
 
 import authRoutes from './routes/authRoutes.js';
 import eventRoutes from './routes/eventRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
 
 import errorMiddleware from './middleware/errorMiddleware.js';
 
@@ -36,6 +37,13 @@ const isAllowedOrigin = (origin) => {
 
   if (allowedOrigins.includes(origin)) {
     return true;
+  }
+
+  // Allow localhost origins during development (any port)
+  if (process.env.NODE_ENV !== 'production') {
+    if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin)) {
+      return true;
+    }
   }
 
   if (/^https:\/\/[a-z0-9-]+\.vercel\.app$/i.test(origin)) {
@@ -71,6 +79,9 @@ app.use(
     allowedHeaders: [
       'Content-Type',
       'Authorization',
+      'Cache-Control',
+      'Pragma',
+      'Expires',
     ],
   })
 );
@@ -158,6 +169,7 @@ app.use('/auth', authRoutes);
  * Event + RSVP Routes
  */
 app.use('/api', eventRoutes);
+app.use('/api', adminRoutes);
 
 /**
  * Optional direct routes

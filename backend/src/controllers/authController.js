@@ -69,10 +69,23 @@ export const register = async (req, res, next) => {
     }
 
     if (!isDbConnected()) {
-      return res.status(503).json({
-        success: false,
-        message: 'Database is not connected. Please try again shortly.',
-      });
+      // Try to establish a DB connection on-demand for registration.
+      try {
+        const { default: connectDB } = await import('../config/db.js');
+        const conn = await connectDB();
+        if (!conn) {
+          return res.status(503).json({
+            success: false,
+            message: 'Database is not connected. Please try again shortly.',
+          });
+        }
+      } catch (err) {
+        console.error('❌ [REGISTER] DB connect attempt failed:', err && err.message);
+        return res.status(503).json({
+          success: false,
+          message: 'Database is not connected. Please try again shortly.',
+        });
+      }
     }
 
     // Check if email already exists

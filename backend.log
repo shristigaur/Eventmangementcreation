@@ -266,3 +266,21 @@ MongooseServerSelectionError: Could not connect to any servers in your MongoDB A
 🗄️ MongoDB status after failure: disconnected
 ⚠️ Server will continue running without database connection
 [31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+file:///home/sama/Downloads/Eventmangementcreation/backend/src/server.js:117
+};
+^
+
+SyntaxError: Missing catch or finally after try
+    at compileSourceTextModule (node:internal/modules/esm/utils:346:16)
+    at ModuleLoader.moduleStrategy (node:internal/modules/esm/translators:107:18)
+    at #translate (node:internal/modules/esm/loader:540:12)
+    at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:587:27)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async ModuleJob._link (node:internal/modules/esm/module_job:162:19)
+
+Node.js v22.19.0
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m

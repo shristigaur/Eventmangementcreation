@@ -1,5 +1,6 @@
-export const ADMIN_EMAIL = "shristitest24@gmail.com";
-export const ADMIN_PASSWORD = "define";
+// Admin credentials for frontend-only admin dashboard (development only)
+export const ADMIN_EMAIL = "admin@eventify.local";
+export const ADMIN_PASSWORD = "Secur3P@ssw0rd!";
 
 export function getStoredSession() {
 	try {

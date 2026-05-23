@@ -64,24 +64,15 @@ const connectDB = async () => {
 
     return conn;
   } catch (error) {
-    console.error(
-      `❌ MongoDB connection failed: ${error.message}`
-    );
-
+    console.error(`❌ MongoDB connection failed: ${error.message}`);
     console.error(error.stack);
+    console.log(`🗄️ MongoDB status after failure: ${getDbStatus()}`);
+    console.log('⚠️ Server will continue running without database connection');
 
-    console.log(
-      `🗄️ MongoDB status after failure: ${getDbStatus()}`
-    );
-
-    console.log(
-      '⚠️ Server will continue running without database connection'
-    );
-
-    process.exit(1);
-
-    // If you want server to stop on DB failure, use:
-    // process.exit(1);
+    // Return null so callers can decide how to proceed. Avoid exiting the
+    // process here so higher-level startup logic can handle retries or
+    // degraded operation (useful for container platforms and health checks).
+    return null;
   }
 };
 
