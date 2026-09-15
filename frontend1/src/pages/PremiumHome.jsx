@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { eventAPI } from "../api/index.js";
 import ModernNavbar from "../modern/ModernNavbar";
 import ModernEventCard from "../modern/ModernEventCard";
@@ -52,6 +52,9 @@ export default function PremiumHome() {
   const eventsSectionRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const requestedFilter = searchParams.get("category");
+  const selectedFilter = filters.includes(requestedFilter) ? requestedFilter : activeFilter;
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -108,14 +111,14 @@ export default function PremiumHome() {
 
   const filteredEvents = useMemo(() => {
     return eventsData.filter((event) => {
-      const matchesFilter = activeFilter === "All" || event.category === activeFilter;
+      const matchesFilter = selectedFilter === "All" || event.category === selectedFilter;
       const matchesQuery = [event.title, event.location, event.category]
         .join(" ")
         .toLowerCase()
         .includes(query.toLowerCase());
       return matchesFilter && matchesQuery;
     });
-  }, [activeFilter, query, eventsData]);
+  }, [selectedFilter, query, eventsData]);
 
   const scrollToEvents = () => {
     eventsSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -300,7 +303,7 @@ export default function PremiumHome() {
 
             <div className="mt-5 flex flex-wrap gap-3">
               {filters.map((filter) => {
-                const active = activeFilter === filter;
+                const active = selectedFilter === filter;
                 return (
                   <button
                     key={filter}
@@ -351,6 +354,7 @@ export default function PremiumHome() {
                 onClick={() => {
                   setActiveFilter("All");
                   setQuery("");
+                  navigate("/home#events");
                 }}
                 className="button-secondary mt-5 rounded-full px-5 py-3 font-semibold text-emerald-700"
               >

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { rsvpAPI } from "../api/index.js";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -10,7 +10,7 @@ const rsvpLabels = {
 	decline: "Not going",
 };
 
-export default function ModernEventCard({ event }) {
+function ModernEventCard({ event }) {
   const eventId = event._id || event.id;
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -141,3 +141,5 @@ export default function ModernEventCard({ event }) {
     </article>
   );
 }
+
+export default memo(ModernEventCard);

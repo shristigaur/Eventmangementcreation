@@ -89,9 +89,20 @@ export default function ModernNavbar() {
             My Events
           </NavLink>
           <div className="flex items-center gap-2 text-slate-500">
-            <span className="nav-pill">Business</span>
-            <span className="nav-pill">Travel</span>
-            <span className="nav-pill">Festivals</span>
+            {[
+              ["Business", "Business"],
+              ["Travel", "Travel"],
+              ["Festivals", "Festival"],
+            ].map(([label, category]) => (
+              <button
+                key={label}
+                type="button"
+                className="nav-pill"
+                onClick={() => navigate(`/home?category=${category}#events`)}
+              >
+                {label}
+              </button>
+            ))}
           </div>
         </nav>
 
